@@ -1,0 +1,12 @@
+{
+  "images" : [
+    {
+      "filename" : "BlueBack.svg",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}
