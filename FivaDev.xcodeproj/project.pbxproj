@@ -6,8 +6,17 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		F405AA9D2E79AB1F0013FF04 /* CLAUDE.md in Resources */ = {isa = PBXBuildFile; fileRef = F405AA9B2E79AB1F0013FF04 /* CLAUDE.md */; };
+		F405AA9E2E79AB1F0013FF04 /* Game Board Layout Instructions.md in Resources */ = {isa = PBXBuildFile; fileRef = F405AA9C2E79AB1F0013FF04 /* Game Board Layout Instructions.md */; };
+		F405AA9F2E79AB1F0013FF04 /* 📈Recent Development Progress.md in Resources */ = {isa = PBXBuildFile; fileRef = F405AA9A2E79AB1F0013FF04 /* 📈Recent Development Progress.md */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		F405AA882E79985D0013FF04 /* FivaDev.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FivaDev.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		F405AA9A2E79AB1F0013FF04 /* 📈Recent Development Progress.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; name = "📈Recent Development Progress.md"; path = "/Users/dkauper/Library/Mobile Documents/iCloud~md~obsidian/Documents/Home/Development/📈Recent Development Progress.md"; sourceTree = "<absolute>"; };
+		F405AA9B2E79AB1F0013FF04 /* CLAUDE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; name = CLAUDE.md; path = "/Users/dkauper/Library/Mobile Documents/iCloud~md~obsidian/Documents/Home/Development/CLAUDE.md"; sourceTree = "<absolute>"; };
+		F405AA9C2E79AB1F0013FF04 /* Game Board Layout Instructions.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; name = "Game Board Layout Instructions.md"; path = "/Users/dkauper/Library/Mobile Documents/iCloud~md~obsidian/Documents/Home/Development/Fiva/Game Board Layout Instructions.md"; sourceTree = "<absolute>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -32,6 +41,9 @@
 		F405AA7F2E79985D0013FF04 = {
 			isa = PBXGroup;
 			children = (
+				F405AA9A2E79AB1F0013FF04 /* 📈Recent Development Progress.md */,
+				F405AA9B2E79AB1F0013FF04 /* CLAUDE.md */,
+				F405AA9C2E79AB1F0013FF04 /* Game Board Layout Instructions.md */,
 				F405AA8A2E79985D0013FF04 /* FivaDev */,
 				F405AA892E79985D0013FF04 /* Products */,
 			);
@@ -109,6 +121,9 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F405AA9D2E79AB1F0013FF04 /* CLAUDE.md in Resources */,
+				F405AA9E2E79AB1F0013FF04 /* Game Board Layout Instructions.md in Resources */,
+				F405AA9F2E79AB1F0013FF04 /* 📈Recent Development Progress.md in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -255,6 +270,7 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Fiva;
 				INFOPLIST_KEY_NSCameraUsageDescription = CAMERA_USAGE_DESCRIPTION;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
@@ -276,13 +292,14 @@
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx appletvos appletvsimulator xros xrsimulator";
+				SUPPORTED_PLATFORMS = "appletvos appletvsimulator iphoneos iphonesimulator macosx";
+				SUPPORTS_MACCATALYST = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2,3,7";
+				TARGETED_DEVICE_FAMILY = "1,2,3";
 				TVOS_DEPLOYMENT_TARGET = 26.0;
 				XROS_DEPLOYMENT_TARGET = 26.0;
 			};
@@ -302,6 +319,7 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Fiva;
 				INFOPLIST_KEY_NSCameraUsageDescription = CAMERA_USAGE_DESCRIPTION;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
@@ -323,13 +341,14 @@
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx appletvos appletvsimulator xros xrsimulator";
+				SUPPORTED_PLATFORMS = "appletvos appletvsimulator iphoneos iphonesimulator macosx";
+				SUPPORTS_MACCATALYST = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2,3,7";
+				TARGETED_DEVICE_FAMILY = "1,2,3";
 				TVOS_DEPLOYMENT_TARGET = 26.0;
 				XROS_DEPLOYMENT_TARGET = 26.0;
 			};
