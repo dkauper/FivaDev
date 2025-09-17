@@ -14,25 +14,15 @@ struct GameGrid: View {
     let orientation: AppOrientation
     
     private let gridSize = 10
-    private let spacingRatio: CGFloat = 0.02
+    private let spacingRatio: CGFloat = 0.002  // Reduced spacing for larger cards
     
     var body: some View {
         ZStack {
             // Debug background - should be RED in landscape, BLUE in portrait
             Rectangle()
                 .fill(orientation == .landscape ? Color.red : Color.blue)
-                .opacity(0.5)
+                .opacity(0.3)  // More transparent so we can see the cards better
                 .frame(width: width, height: height)
-            
-            // Debug text overlay
-            VStack {
-                Text(orientation == .landscape ? "LANDSCAPE MODE" : "PORTRAIT MODE")
-                    .font(.title)
-                    .foregroundColor(.white)
-                    .background(Color.black.opacity(0.7))
-                    .padding()
-                Spacer()
-            }
             
             // The grid
             buildGrid()
@@ -41,7 +31,9 @@ struct GameGrid: View {
     
     private func buildGrid() -> some View {
         let cellDims = calculateCellDimensions()
-        let spacing = (orientation == .landscape ? width : height) * spacingRatio
+        let useWidth = orientation == .landscape ? height : width
+        let useHeight = orientation == .landscape ? width : height
+        let spacing = min(useWidth, useHeight) * spacingRatio  // Use smaller dimension for consistent spacing
         let columns = Array(repeating: GridItem(.fixed(cellDims.width), spacing: spacing), count: gridSize)
         
         let grid = LazyVGrid(columns: columns, spacing: spacing) {
@@ -54,6 +46,7 @@ struct GameGrid: View {
                 )
             }
         }
+        .padding(2)  // Small padding around the entire grid
         
         if orientation == .landscape {
             return AnyView(
@@ -73,26 +66,41 @@ struct GameGrid: View {
         let useWidth = orientation == .landscape ? height : width
         let useHeight = orientation == .landscape ? width : height
         
-        let totalHorizontalSpacing = useWidth * spacingRatio * CGFloat(gridSize - 1)
-        let totalVerticalSpacing = useHeight * spacingRatio * CGFloat(gridSize - 1)
+        // Account for grid padding
+        let paddingAdjustment: CGFloat = 8  // 4px padding on each side
+        let adjustedWidth = useWidth - paddingAdjustment
+        let adjustedHeight = useHeight - paddingAdjustment
         
-        let availableWidth = useWidth - totalHorizontalSpacing
-        let availableHeight = useHeight - totalVerticalSpacing
+        // Calculate spacing
+        let spacing = min(adjustedWidth, adjustedHeight) * spacingRatio
+        let totalHorizontalSpacing = spacing * CGFloat(gridSize - 1)
+        let totalVerticalSpacing = spacing * CGFloat(gridSize - 1)
         
-        let cellWidth = availableWidth / CGFloat(gridSize)
-        let cellHeight = availableHeight / CGFloat(gridSize)
+        // Available space for cards
+        let availableWidth = adjustedWidth - totalHorizontalSpacing
+        let availableHeight = adjustedHeight - totalVerticalSpacing
         
+        // Calculate maximum cell dimensions
+        let maxCellWidth = availableWidth / CGFloat(gridSize)
+        let maxCellHeight = availableHeight / CGFloat(gridSize)
+        
+        // Maintain 1:1.5 aspect ratio for cards (width:height)
         let cardAspectRatio: CGFloat = 1.0 / 1.5
         
-        if cellWidth / cellHeight > cardAspectRatio {
-            let finalHeight = cellHeight
-            let finalWidth = cellHeight * cardAspectRatio
-            return (finalWidth, finalHeight)
+        let finalWidth: CGFloat
+        let finalHeight: CGFloat
+        
+        if maxCellWidth / maxCellHeight > cardAspectRatio {
+            // Height is the limiting factor - use full height
+            finalHeight = maxCellHeight
+            finalWidth = maxCellHeight * cardAspectRatio
         } else {
-            let finalWidth = cellWidth
-            let finalHeight = cellWidth / cardAspectRatio
-            return (finalWidth, finalHeight)
+            // Width is the limiting factor - use full width
+            finalWidth = maxCellWidth
+            finalHeight = maxCellWidth / cardAspectRatio
         }
+        
+        return (finalWidth, finalHeight)
     }
 }
 

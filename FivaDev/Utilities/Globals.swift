@@ -126,10 +126,10 @@ struct GlobalLayoutConstants {
             headerWidth: 1.0,            // 100% of device width
             bodyHeight: 0.88,            // Calculated: device height minus header height
             bodyWidth: 1.0,              // 100% of device width
-            gameBoardTopPadding: 0.05,   // 5% of body height
-            gameBoardLeftPadding: 0.05,  // 5% of body width
-            gameBoardBottomPadding: 0.05, // 5% of body height
-            gameBoardRightPadding: 0.05, // 5% of body width
+            gameBoardTopPadding: 0.075,   // 5% of body height
+            gameBoardLeftPadding: 0.005,  // 5% of body width
+            gameBoardBottomPadding: 0.075, // 5% of body height
+            gameBoardRightPadding: 0.005, // 5% of body width
             gameBoardAnchor: .topLeft,
             gridAnchor: .topLeft
         )
@@ -144,10 +144,10 @@ struct GlobalLayoutConstants {
             headerWidth: 1.0,            // 100% of device width
             bodyHeight: 0.85,            // Calculated: device height minus header height
             bodyWidth: 1.0,              // 100% of device width
-            gameBoardTopPadding: 0.08,   // 8% of body height
-            gameBoardLeftPadding: 0.15,  // 15% of body width
-            gameBoardBottomPadding: 0.08, // 8% of body height
-            gameBoardRightPadding: 0.15, // 15% of body width
+            gameBoardTopPadding: 0.005,   // 8% of body height
+            gameBoardLeftPadding: 0.18,  // 15% of body width
+            gameBoardBottomPadding: 0.00, // 8% of body height
+            gameBoardRightPadding: 0.18, // 15% of body width
             gameBoardAnchor: .bottomLeft,
             gridAnchor: .bottomLeft
         )
@@ -163,9 +163,9 @@ struct GlobalLayoutConstants {
             bodyHeight: 0.92,            // Calculated: device height minus header height
             bodyWidth: 1.0,              // 100% of device width
             gameBoardTopPadding: 0.08,   // 8% of body height
-            gameBoardLeftPadding: 0.15,  // 15% of body width
+            gameBoardLeftPadding: 0.165,  // 15% of body width
             gameBoardBottomPadding: 0.08, // 8% of body height
-            gameBoardRightPadding: 0.15, // 15% of body width
+            gameBoardRightPadding: 0.165, // 15% of body width
             gameBoardAnchor: .topLeft,
             gridAnchor: .topLeft
         )
@@ -180,9 +180,9 @@ struct GlobalLayoutConstants {
             headerWidth: 1.0,            // 100% of device width
             bodyHeight: 0.90,            // Calculated: device height minus header height
             bodyWidth: 1.0,              // 100% of device width
-            gameBoardTopPadding: 0.05,   // 10% of body height
+            gameBoardTopPadding: 0.075,   // 10% of body height
             gameBoardLeftPadding: 0.10,  // 20% of body width
-            gameBoardBottomPadding: 0.05, // 10% of body height
+            gameBoardBottomPadding: 0.075, // 10% of body height
             gameBoardRightPadding: 0.10, // 20% of body width
             gameBoardAnchor: .bottomLeft,
             gridAnchor: .bottomLeft
