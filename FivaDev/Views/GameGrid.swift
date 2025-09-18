@@ -14,26 +14,17 @@ struct GameGrid: View {
     let orientation: AppOrientation
     
     private let gridSize = 10
-    private let spacingRatio: CGFloat = 0.002  // Reduced spacing for larger cards
+    private let spacingRatio: CGFloat = 0.005
     
     var body: some View {
-        ZStack {
-            // Debug background - should be RED in landscape, BLUE in portrait
-            Rectangle()
-                .fill(orientation == .landscape ? Color.red : Color.blue)
-                .opacity(0.3)  // More transparent so we can see the cards better
-                .frame(width: width, height: height)
-            
-            // The grid
-            buildGrid()
-        }
+        buildGrid()
     }
     
     private func buildGrid() -> some View {
         let cellDims = calculateCellDimensions()
         let useWidth = orientation == .landscape ? height : width
         let useHeight = orientation == .landscape ? width : height
-        let spacing = min(useWidth, useHeight) * spacingRatio  // Use smaller dimension for consistent spacing
+        let spacing = min(useWidth, useHeight) * spacingRatio
         let columns = Array(repeating: GridItem(.fixed(cellDims.width), spacing: spacing), count: gridSize)
         
         let grid = LazyVGrid(columns: columns, spacing: spacing) {
@@ -46,7 +37,7 @@ struct GameGrid: View {
                 )
             }
         }
-        .padding(2)  // Small padding around the entire grid
+        .padding(8)
         
         if orientation == .landscape {
             return AnyView(
@@ -67,7 +58,7 @@ struct GameGrid: View {
         let useHeight = orientation == .landscape ? width : height
         
         // Account for grid padding
-        let paddingAdjustment: CGFloat = 8  // 4px padding on each side
+        let paddingAdjustment: CGFloat = 16
         let adjustedWidth = useWidth - paddingAdjustment
         let adjustedHeight = useHeight - paddingAdjustment
         
