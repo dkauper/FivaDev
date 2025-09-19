@@ -13,6 +13,8 @@ struct GameGrid: View {
     let anchor: AnchorPosition
     let orientation: AppOrientation
     
+    @EnvironmentObject var gameStateManager: GameStateManager
+    
     private let gridSize = 10
     private let spacingRatio: CGFloat = 0.005
     
@@ -42,6 +44,7 @@ struct GameGrid: View {
                     height: cellDims.height,
                     orientation: .portrait
                 )
+                .environmentObject(gameStateManager)
             }
         }
         .padding(8)

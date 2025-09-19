@@ -59,6 +59,103 @@ enum AnchorPosition {
     case bottomLeft
 }
 
+// MARK: - Game State Variables
+struct GameState {
+    static var numPlayers: Int = 2
+    static var numTeams: Int = 2
+    static var currentPlayer: Int = 0
+    
+    // Cards dealt based on player count (from CLAUDE.md section 4)
+    static var cardsPerPlayer: Int {
+        switch numPlayers {
+        case 2: return 7
+        case 3, 4: return 6
+        case 5, 6: return 5
+        case 7, 8, 9: return 4
+        case 10, 11, 12: return 3
+        default: return 7
+        }
+    }
+}
+
+// MARK: - Player Hand Layout Constants
+struct PlayerHandLayoutConstants {
+    let playerHandTop: CGFloat
+    let playerHandBottom: CGFloat
+    let playerHandLeft: CGFloat
+    let playerHandRight: CGFloat
+    
+    static func current(for deviceType: DeviceType, orientation: AppOrientation) -> PlayerHandLayoutConstants {
+        switch (deviceType, orientation) {
+        case (.iPhone, .portrait):
+            return PlayerHandLayoutConstants(
+                playerHandTop: 0.89,      // 10% padding from top of BodyView
+                playerHandBottom: 0.01,    // 15% padding from bottom of BodyView
+                playerHandLeft: 0.02,      // 5% padding from left side of BodyView
+                playerHandRight: 0.02      // 5% padding from left side of GameBoard
+            )
+        case (.iPhone, .landscape):
+            return PlayerHandLayoutConstants(
+                playerHandTop: 0.05,      // 5% padding from top of BodyView
+                playerHandBottom: 0.05,    // 5% padding from bottom of BodyView
+                playerHandLeft: 0.05,      // 5% padding from left side of BodyView
+                playerHandRight: 0.25      // 25% padding from left side of GameBoard
+            )
+        case (.iPad, .portrait):
+            return PlayerHandLayoutConstants(
+                playerHandTop: 0.08,      // 8% padding from top of BodyView
+                playerHandBottom: 0.12,    // 12% padding from bottom of BodyView
+                playerHandLeft: 0.05,      // 5% padding from left side of BodyView
+                playerHandRight: 0.20      // 20% padding from left side of GameBoard
+            )
+        case (.iPad, .landscape):
+            return PlayerHandLayoutConstants(
+                playerHandTop: 0.05,      // 5% padding from top of BodyView
+                playerHandBottom: 0.05,    // 5% padding from bottom of BodyView
+                playerHandLeft: 0.05,      // 5% padding from left side of BodyView
+                playerHandRight: 0.25      // 25% padding from left side of GameBoard
+            )
+        case (.mac, .landscape):
+            return PlayerHandLayoutConstants(
+                playerHandTop: 0.05,      // 5% padding from top of BodyView
+                playerHandBottom: 0.05,    // 5% padding from bottom of BodyView
+                playerHandLeft: 0.05,      // 5% padding from left side of BodyView
+                playerHandRight: 0.55      // 55% padding from left side of GameBoard
+            )
+        case (.appleTV, .landscape):
+            return PlayerHandLayoutConstants(
+                playerHandTop: 0.08,      // 8% padding from top of BodyView
+                playerHandBottom: 0.08,    // 8% padding from bottom of BodyView
+                playerHandLeft: 0.05,      // 5% padding from left side of BodyView
+                playerHandRight: 0.20      // 20% padding from left side of GameBoard
+            )
+        default:
+            return PlayerHandLayoutConstants(
+                playerHandTop: 0.10,
+                playerHandBottom: 0.15,
+                playerHandLeft: 0.05,
+                playerHandRight: 0.05
+            )
+        }
+    }
+    
+    func playerHandTopValue(_ bodyHeight: CGFloat) -> CGFloat {
+        return playerHandTop * bodyHeight
+    }
+    
+    func playerHandBottomValue(_ bodyHeight: CGFloat) -> CGFloat {
+        return playerHandBottom * bodyHeight
+    }
+    
+    func playerHandLeftValue(_ bodyWidth: CGFloat) -> CGFloat {
+        return playerHandLeft * bodyWidth
+    }
+    
+    func playerHandRightValue(_ bodyWidth: CGFloat) -> CGFloat {
+        return playerHandRight * bodyWidth
+    }
+}
+
 // MARK: - Global Layout Constants
 struct GlobalLayoutConstants {
     let deviceLength: CGFloat
@@ -234,6 +331,27 @@ struct GlobalLayoutConstants {
             gameBoardAnchor: .bottomLeft,
             gridAnchor: .bottomLeft
         )
+    }
+}
+
+// MARK: - Glass Effect View Modifier
+struct GlassEffect: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .background(
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(.ultraThinMaterial)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(.white.opacity(0.2), lineWidth: 1)
+                    )
+            )
+    }
+}
+
+extension View {
+    func glassEffect() -> some View {
+        modifier(GlassEffect())
     }
 }
 

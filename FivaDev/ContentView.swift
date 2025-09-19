@@ -8,6 +8,8 @@
 import SwiftUI
 
 struct ContentView: View {
+    @StateObject private var gameStateManager = GameStateManager()
+    
     var body: some View {
         GeometryReader { geometry in
             let deviceType = DeviceType.current
@@ -36,6 +38,7 @@ struct ContentView: View {
                     geometry: geometry
                 )
                 .frame(width: bodyWidth, height: bodyHeight)
+                .environmentObject(gameStateManager)
             }
         }
         // Force view to update on size changes using geometry dimensions instead of UIScreen.main

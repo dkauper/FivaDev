@@ -14,6 +14,8 @@ struct BodyView: View {
     let orientation: AppOrientation
     let geometry: GeometryProxy
     
+    @EnvironmentObject var gameStateManager: GameStateManager
+    
     var body: some View {
         ZStack {
             // Background for body
@@ -26,6 +28,17 @@ struct BodyView: View {
                 layoutConstants: layoutConstants,
                 orientation: orientation
             )
+            .environmentObject(gameStateManager)
+            
+            // Player Hand Overlay
+            PlayerHandView(
+                bodyWidth: width,
+                bodyHeight: height,
+                layoutConstants: layoutConstants,
+                playerHandConstants: PlayerHandLayoutConstants.current(for: DeviceType.current, orientation: orientation),
+                orientation: orientation
+            )
+            .environmentObject(gameStateManager)
         }
         .frame(width: width, height: height)
     }
@@ -46,6 +59,7 @@ struct BodyView: View {
             orientation: orientation,
             geometry: geometry
         )
+        .environmentObject(GameStateManager())
     }
     .background(Color(hex: "B7E4CC"))
 }

@@ -17,6 +17,8 @@ struct GameGridElement: View {
     let height: CGFloat
     let orientation: AppOrientation
     
+    @EnvironmentObject var gameStateManager: GameStateManager
+    
     // Card distribution for the 10x10 grid (100 positions, 0-99)
     private let cardDistribution = [
         "RedJoker", "5D", "6D", "7D", "8D", "9D", "QD", "KD", "AD", "BlackJoker",
@@ -39,6 +41,8 @@ struct GameGridElement: View {
     }
     
     var body: some View {
+        let shouldHighlight = gameStateManager.shouldHighlight(position: position)
+        
         ZStack {
             // Card background with rounded corners
             RoundedRectangle(cornerRadius: 6)
@@ -67,6 +71,24 @@ struct GameGridElement: View {
             #endif
         }
         .frame(width: width, height: height)
+        .scaleEffect(shouldHighlight ? 1.5 : 1.0)
+        .background(
+            Group {
+                if shouldHighlight {
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(.ultraThinMaterial)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(.white.opacity(0.2), lineWidth: 1)
+                        )
+                } else {
+                    Color.clear
+                }
+            }
+        )
+        .opacity(shouldHighlight ? 1.0 : (gameStateManager.highlightedCards.isEmpty ? 1.0 : 0.7))
+        .animation(.easeInOut(duration: 0.2), value: shouldHighlight)
+        .zIndex(shouldHighlight ? 1 : 0)
     }
     
     private var cardFallbackView: some View {
@@ -90,6 +112,7 @@ struct GameGridElement: View {
         height: 60,
         orientation: .portrait
     )
+    .environmentObject(GameStateManager())
     .padding()
 }
 
@@ -100,5 +123,6 @@ struct GameGridElement: View {
         height: 60,
         orientation: .portrait
     )
+    .environmentObject(GameStateManager())
     .padding()
 }

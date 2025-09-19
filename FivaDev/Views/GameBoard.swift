@@ -13,6 +13,8 @@ struct GameBoard: View {
     let layoutConstants: GlobalLayoutConstants
     let orientation: AppOrientation
     
+    @EnvironmentObject var gameStateManager: GameStateManager
+    
     var body: some View {
         let topPadding = layoutConstants.gameBoardTopPaddingValue(bodyHeight)
         let leftPadding = layoutConstants.gameBoardLeftPaddingValue(bodyWidth)
@@ -51,6 +53,7 @@ struct GameBoard: View {
                         anchor: layoutConstants.gridAnchor,
                         orientation: orientation
                     )
+                    .environmentObject(gameStateManager)
                 }
                 .frame(width: gameBoardWidth, height: gameBoardHeight)
                 
