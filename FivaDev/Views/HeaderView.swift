@@ -12,15 +12,31 @@ struct HeaderView: View {
         ZStack {
             // Use a subtle material to stand out against the background
             Color.clear.background(.ultraThinMaterial)
-            HStack {
-                Text("Fiva Game")
-                    .font(.headline)
-                    .foregroundStyle(.primary)
+            HStack{
+                Text("Left")
                 Spacer()
-                Text("Header Content")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
             }
+            
+            HStack(alignment: .center){
+                Text("Fiva")
+                    .font(.title2.bold())
+                    .bold()
+                    .foregroundStyle(.primary)
+            }
+            HStack{
+                Spacer()
+                Text("Right")
+            }//            HStack {
+//                Text("Fiva")
+//                    .font(.largeTitle)
+//                    .bold()
+//                    
+//                    .foregroundStyle(.primary)
+//                Spacer()
+//                Text("Header Content")
+//                    .font(.subheadline)
+//                    .foregroundStyle(.secondary)
+//            }
             .padding(.horizontal)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
         }

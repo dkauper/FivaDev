@@ -17,7 +17,14 @@ struct GameGrid: View {
     private let spacingRatio: CGFloat = 0.005
     
     var body: some View {
-        buildGrid()
+        ZStack {
+            // Dark green background to show card alignment and spacing
+            Rectangle()
+                .fill(Color.green.opacity(0.7))
+                .frame(width: width, height: height)
+            
+            buildGrid()
+        }
     }
     
     private func buildGrid() -> some View {
@@ -58,7 +65,7 @@ struct GameGrid: View {
         let useHeight = orientation == .landscape ? width : height
         
         // Account for grid padding
-        let paddingAdjustment: CGFloat = 16
+        let paddingAdjustment: CGFloat = 4
         let adjustedWidth = useWidth - paddingAdjustment
         let adjustedHeight = useHeight - paddingAdjustment
         

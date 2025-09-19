@@ -86,5 +86,6 @@ struct GameBoard: View {
             orientation: orientation
         )
     }
-    .background(Color(hex: "B7E4CC"))
+//    .background(Color(hex: "B7E4CC"))
+    .background(Color(hex: "0B770A"))
 }

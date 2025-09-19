@@ -38,8 +38,8 @@ struct ContentView: View {
                 .frame(width: bodyWidth, height: bodyHeight)
             }
         }
-        // Force view to update on size changes
-        .id("\(UIScreen.main.bounds.width)x\(UIScreen.main.bounds.height)")
+        // Force view to update on size changes using geometry dimensions instead of UIScreen.main
+        .id("view-refresh")
     }
 }
 

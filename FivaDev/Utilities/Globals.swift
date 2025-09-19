@@ -6,7 +6,14 @@
 //
 
 import SwiftUI
+
+#if canImport(UIKit)
 import UIKit
+#endif
+
+#if canImport(AppKit)
+import AppKit
+#endif
 
 // MARK: - Device Type Detection
 enum DeviceType {
@@ -17,11 +24,15 @@ enum DeviceType {
     
     static var current: DeviceType {
         #if os(iOS)
+        #if canImport(UIKit)
         if UIDevice.current.userInterfaceIdiom == .pad {
             return .iPad
         } else {
             return .iPhone
         }
+        #else
+        return .iPhone // fallback
+        #endif
         #elseif os(macOS)
         return .mac
         #elseif os(tvOS)
@@ -122,14 +133,14 @@ struct GlobalLayoutConstants {
         return GlobalLayoutConstants(
             deviceLength: 0, // Will be set dynamically
             deviceWidth: 0,  // Will be set dynamically
-            headerHeight: 0.12,          // 12% of device length
+            headerHeight: 0.08,          // 12% of device length
             headerWidth: 1.0,            // 100% of device width
             bodyHeight: 0.88,            // Calculated: device height minus header height
             bodyWidth: 1.0,              // 100% of device width
-            gameBoardTopPadding: 0.075,   // 5% of body height
-            gameBoardLeftPadding: 0.005,  // 5% of body width
-            gameBoardBottomPadding: 0.075, // 5% of body height
-            gameBoardRightPadding: 0.005, // 5% of body width
+            gameBoardTopPadding: 0.125,   // 5% of body height
+            gameBoardLeftPadding: 0.05,  // 5% of body width
+            gameBoardBottomPadding: 0.125, // 5% of body height
+            gameBoardRightPadding: 0.05, // 5% of body width
             gameBoardAnchor: .topLeft,
             gridAnchor: .topLeft
         )
@@ -144,10 +155,10 @@ struct GlobalLayoutConstants {
             headerWidth: 1.0,            // 100% of device width
             bodyHeight: 0.85,            // Calculated: device height minus header height
             bodyWidth: 1.0,              // 100% of device width
-            gameBoardTopPadding: 0.005,   // 8% of body height
-            gameBoardLeftPadding: 0.18,  // 15% of body width
-            gameBoardBottomPadding: 0.00, // 8% of body height
-            gameBoardRightPadding: 0.18, // 15% of body width
+            gameBoardTopPadding: 0.05,   // 8% of body height
+            gameBoardLeftPadding: 0.2,  // 15% of body width
+            gameBoardBottomPadding: 0.0, // 8% of body height
+            gameBoardRightPadding: 0.2, // 15% of body width
             gameBoardAnchor: .bottomLeft,
             gridAnchor: .bottomLeft
         )
@@ -163,9 +174,9 @@ struct GlobalLayoutConstants {
             bodyHeight: 0.92,            // Calculated: device height minus header height
             bodyWidth: 1.0,              // 100% of device width
             gameBoardTopPadding: 0.08,   // 8% of body height
-            gameBoardLeftPadding: 0.165,  // 15% of body width
+            gameBoardLeftPadding: 0.15,  // 15% of body width
             gameBoardBottomPadding: 0.08, // 8% of body height
-            gameBoardRightPadding: 0.165, // 15% of body width
+            gameBoardRightPadding: 0.15, // 15% of body width
             gameBoardAnchor: .topLeft,
             gridAnchor: .topLeft
         )
@@ -180,10 +191,10 @@ struct GlobalLayoutConstants {
             headerWidth: 1.0,            // 100% of device width
             bodyHeight: 0.90,            // Calculated: device height minus header height
             bodyWidth: 1.0,              // 100% of device width
-            gameBoardTopPadding: 0.075,   // 10% of body height
-            gameBoardLeftPadding: 0.10,  // 20% of body width
-            gameBoardBottomPadding: 0.075, // 10% of body height
-            gameBoardRightPadding: 0.10, // 20% of body width
+            gameBoardTopPadding: 0.10,   // 10% of body height
+            gameBoardLeftPadding: 0.20,  // 20% of body width
+            gameBoardBottomPadding: 0.10, // 10% of body height
+            gameBoardRightPadding: 0.20, // 20% of body width
             gameBoardAnchor: .bottomLeft,
             gridAnchor: .bottomLeft
         )
@@ -198,10 +209,10 @@ struct GlobalLayoutConstants {
             headerWidth: 1.0,            // 100% of device width
             bodyHeight: 0.92,            // Calculated: device height minus header height
             bodyWidth: 1.0,              // 100% of device width
-            gameBoardTopPadding: 0.12,   // 12% of body height
-            gameBoardLeftPadding: 0.25,  // 25% of body width
-            gameBoardBottomPadding: 0.12, // 12% of body height
-            gameBoardRightPadding: 0.25, // 25% of body width
+            gameBoardTopPadding: 0.03,   // 12% of body height
+            gameBoardLeftPadding: 0.5,  // 25% of body width
+            gameBoardBottomPadding: 0.03, // 12% of body height
+            gameBoardRightPadding: 0.5, // 25% of body width
             gameBoardAnchor: .bottomLeft,
             gridAnchor: .bottomLeft
         )
@@ -212,14 +223,14 @@ struct GlobalLayoutConstants {
         return GlobalLayoutConstants(
             deviceLength: 0, // Will be set dynamically
             deviceWidth: 0,  // Will be set dynamically
-            headerHeight: 0.12,          // 12% of device length
+            headerHeight: 0.01,          // 12% of device length
             headerWidth: 1.0,            // 100% of device width
-            bodyHeight: 0.88,            // Calculated: device height minus header height
+            bodyHeight: 0.85,            // Calculated: device height minus header height
             bodyWidth: 1.0,              // 100% of device width
-            gameBoardTopPadding: 0.15,   // 15% of body height
-            gameBoardLeftPadding: 0.20,  // 20% of body width
-            gameBoardBottomPadding: 0.15, // 15% of body height
-            gameBoardRightPadding: 0.20, // 20% of body width
+            gameBoardTopPadding: 0.09,   // 15% of body height
+            gameBoardLeftPadding: 0.14,  // 20% of body width
+            gameBoardBottomPadding: 0.01, // 15% of body height
+            gameBoardRightPadding: 0.14, // 20% of body width
             gameBoardAnchor: .bottomLeft,
             gridAnchor: .bottomLeft
         )

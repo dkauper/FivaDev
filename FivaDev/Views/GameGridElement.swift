@@ -7,6 +7,10 @@
 
 import SwiftUI
 
+#if canImport(UIKit)
+import UIKit
+#endif
+
 struct GameGridElement: View {
     let position: Int
     let width: CGFloat
@@ -42,6 +46,7 @@ struct GameGridElement: View {
                 .stroke(Color.black.opacity(0.3), lineWidth: 1)
             
             // Card image
+            #if canImport(UIKit)
             if let cardImage = UIImage(named: cardName) {
                 Image(uiImage: cardImage)
                     .resizable()
@@ -50,19 +55,31 @@ struct GameGridElement: View {
                     .padding(2)
             } else {
                 // Fallback if image not found
-                VStack {
-                    Text(cardName)
-                        .font(.caption2)
-                        .foregroundColor(.black)
-                        .multilineTextAlignment(.center)
-                    Text("\(position)")
-                        .font(.caption2)
-                        .foregroundColor(.gray)
-                }
-                .padding(2)
+                cardFallbackView
             }
+            #else
+            // Use SwiftUI Image for non-UIKit platforms (macOS, etc.)
+            Image(cardName)
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .clipShape(RoundedRectangle(cornerRadius: 5))
+                .padding(2)
+            #endif
         }
         .frame(width: width, height: height)
+    }
+    
+    private var cardFallbackView: some View {
+        VStack {
+            Text(cardName)
+                .font(.caption2)
+                .foregroundColor(.black)
+                .multilineTextAlignment(.center)
+            Text("\(position)")
+                .font(.caption2)
+                .foregroundColor(.gray)
+        }
+        .padding(2)
     }
 }
 
