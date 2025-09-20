@@ -21,10 +21,10 @@ struct GameGrid: View {
     var body: some View {
         ZStack {
             // Dark green background to show card alignment and spacing
-            Rectangle()
-                .fill(Color.green.opacity(0.7))
-                .frame(width: width, height: height)
-            
+//            Rectangle()
+//                .fill(Color(hex: "eabf90"))//.opacity(0.1))
+//                .frame(width: width, height: height)
+//            
             buildGrid()
         }
     }

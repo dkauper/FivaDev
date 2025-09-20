@@ -58,7 +58,7 @@ struct PlayerHandView: View {
     
     
     private func playerHandOverlay(width: CGFloat, height: CGFloat) -> some View {
-        let overlayPadding: CGFloat = 4
+        let overlayPadding: CGFloat = 8
         
         return cardsGridContainer(
             availableWidth: width - (overlayPadding * 2),
@@ -68,7 +68,7 @@ struct PlayerHandView: View {
         .background(
             RoundedRectangle(cornerRadius: 12)
                 .fill(.ultraThinMaterial)
-                .stroke(.white.opacity(0.6), lineWidth: 2) // Added visible border
+                .stroke(.red.opacity(0.6), lineWidth: 2) // Added visible border
         )
         .frame(width: width, height: height)
     }
@@ -108,15 +108,15 @@ struct PlayerHandView: View {
                 )
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
     
     private func playerCardView(cardName: String, width: CGFloat, height: CGFloat, index: Int) -> some View {
         ZStack {
             // Card background
             RoundedRectangle(cornerRadius: 4)
-                .fill(Color.white)
-                .stroke(Color.black.opacity(0.3), lineWidth: 0.5)
+                .fill(Color.white.opacity(0.3))
+                .stroke(Color.green.opacity(1), lineWidth: 2)
             
             // Card image
             Image(cardName)
@@ -156,7 +156,7 @@ struct PlayerHandView: View {
             let rows = Int(ceil(Double(cardCount) / Double(columns)))
             
             // Calculate spacing - use more space for fewer cards
-            let spacing = max(minSpacing, min(12, availableWidth / CGFloat(columns * 2)))
+            let spacing = max(minSpacing, min(12, availableWidth / CGFloat(columns * 4)))
             
             // Calculate total space used by spacing
             let totalHorizontalSpacing = spacing * CGFloat(max(0, columns - 1))
@@ -237,8 +237,8 @@ struct PlayerHandView: View {
         )
         .environmentObject(GameStateManager())
     }
-    .background(Color(hex: "B7E4CC"))
-}
+//    .background(Color(hex: "B7E4CC"))
+    .background(Color(hex: "eabf90"))}
 
 #Preview("Landscape") {
     GeometryReader { geometry in
@@ -258,5 +258,5 @@ struct PlayerHandView: View {
         )
         .environmentObject(GameStateManager())
     }
-    .background(Color(hex: "B7E4CC"))
-}
+    .background(Color(hex: "eabf90"))}
+//    .background(Color(hex: "B7E4CC"))}

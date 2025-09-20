@@ -43,7 +43,8 @@ struct GameBoard: View {
                 ZStack(alignment: layoutConstants.gameBoardAnchor == .topLeft ? .topLeading : .bottomLeading) {
                     // GameBoard background
                     Rectangle()
-                        .fill(Color.white.opacity(0.1))
+//                        .fill(Color.white.opacity(0.1))
+                        .fill(Color.clear)
                         .stroke(Color.white.opacity(0.3), lineWidth: 2)
                     
                     // GameGrid aligned within GameBoard
@@ -90,5 +91,5 @@ struct GameBoard: View {
         )
     }
 //    .background(Color(hex: "B7E4CC"))
-    .background(Color(hex: "0B770A"))
+//    .background(Color(hex: "0B770A"))
 }

@@ -77,7 +77,7 @@ struct GameState {
         }
     }
 }
-
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // MARK: - Player Hand Layout Constants
 struct PlayerHandLayoutConstants {
     let playerHandTop: CGFloat
@@ -89,45 +89,45 @@ struct PlayerHandLayoutConstants {
         switch (deviceType, orientation) {
         case (.iPhone, .portrait):
             return PlayerHandLayoutConstants(
-                playerHandTop: 0.89,      // 10% padding from top of BodyView
-                playerHandBottom: 0.01,    // 15% padding from bottom of BodyView
-                playerHandLeft: 0.02,      // 5% padding from left side of BodyView
-                playerHandRight: 0.02      // 5% padding from left side of GameBoard
+                playerHandTop: 0.89,      // 89% padding from top of BodyView
+                playerHandBottom: 0.01,   // 1% padding from bottom of BodyView
+                playerHandLeft: 0.02,     // 2% padding from left side of BodyView
+                playerHandRight: 0.02     // 2% padding from right side of BodyView
             )
         case (.iPhone, .landscape):
             return PlayerHandLayoutConstants(
                 playerHandTop: 0.05,      // 5% padding from top of BodyView
-                playerHandBottom: 0.05,    // 5% padding from bottom of BodyView
-                playerHandLeft: 0.05,      // 5% padding from left side of BodyView
-                playerHandRight: 0.25      // 25% padding from left side of GameBoard
+                playerHandBottom: 0.0,    // 0% padding from bottom of BodyView
+                playerHandLeft: 0.85,     // 85% padding from left side of BodyView
+                playerHandRight: 0.0      // 0% padding from right side of BodyView
             )
         case (.iPad, .portrait):
             return PlayerHandLayoutConstants(
-                playerHandTop: 0.08,      // 8% padding from top of BodyView
-                playerHandBottom: 0.12,    // 12% padding from bottom of BodyView
-                playerHandLeft: 0.05,      // 5% padding from left side of BodyView
-                playerHandRight: 0.20      // 20% padding from left side of GameBoard
+                playerHandTop: 0.1,       // 10% padding from top of BodyView
+                playerHandBottom: 0.1,    // 10% padding from bottom of BodyView
+                playerHandLeft: 0.87,     // 87% padding from left side of BodyView
+                playerHandRight: 0.03     // 3% padding from right side of BodyView
             )
         case (.iPad, .landscape):
             return PlayerHandLayoutConstants(
-                playerHandTop: 0.05,      // 5% padding from top of BodyView
-                playerHandBottom: 0.05,    // 5% padding from bottom of BodyView
-                playerHandLeft: 0.05,      // 5% padding from left side of BodyView
-                playerHandRight: 0.25      // 25% padding from left side of GameBoard
+                playerHandTop: 0.07,      // 5% padding from top of BodyView
+                playerHandBottom: 0.07,   // 5% padding from bottom of BodyView
+                playerHandLeft: 0.92,     // 5% padding from left side of BodyView
+                playerHandRight: 0.01     // 25% padding from right side of BodyView
             )
         case (.mac, .landscape):
             return PlayerHandLayoutConstants(
-                playerHandTop: 0.05,      // 5% padding from top of BodyView
-                playerHandBottom: 0.05,    // 5% padding from bottom of BodyView
-                playerHandLeft: 0.05,      // 5% padding from left side of BodyView
-                playerHandRight: 0.55      // 55% padding from left side of GameBoard
+                playerHandTop: 0.06,      // 5% padding from top of BodyView
+                playerHandBottom: 0.06,   // 5% padding from bottom of BodyView
+                playerHandLeft: 0.915,     // 5% padding from left side of BodyView
+                playerHandRight: 0.02     // 55% padding from right side of BodyView
             )
         case (.appleTV, .landscape):
             return PlayerHandLayoutConstants(
                 playerHandTop: 0.08,      // 8% padding from top of BodyView
-                playerHandBottom: 0.08,    // 8% padding from bottom of BodyView
-                playerHandLeft: 0.05,      // 5% padding from left side of BodyView
-                playerHandRight: 0.20      // 20% padding from left side of GameBoard
+                playerHandBottom: 0.08,   // 8% padding from bottom of BodyView
+                playerHandLeft: 0.05,     // 5% padding from left side of BodyView
+                playerHandRight: 0.20     // 20% padding from right side of BodyView
             )
         default:
             return PlayerHandLayoutConstants(
@@ -230,14 +230,14 @@ struct GlobalLayoutConstants {
         return GlobalLayoutConstants(
             deviceLength: 0, // Will be set dynamically
             deviceWidth: 0,  // Will be set dynamically
-            headerHeight: 0.08,          // 12% of device length
+            headerHeight: 0.05,          // 8% of device length
             headerWidth: 1.0,            // 100% of device width
             bodyHeight: 0.88,            // Calculated: device height minus header height
             bodyWidth: 1.0,              // 100% of device width
-            gameBoardTopPadding: 0.125,   // 5% of body height
-            gameBoardLeftPadding: 0.05,  // 5% of body width
-            gameBoardBottomPadding: 0.125, // 5% of body height
-            gameBoardRightPadding: 0.05, // 5% of body width
+            gameBoardTopPadding: 0.1,  // 12.5% of body height
+            gameBoardLeftPadding: 0.01,  // 5% of body width
+            gameBoardBottomPadding: 0.125, // 12.5% of body height
+            gameBoardRightPadding: 0.01, // 5% of body width
             gameBoardAnchor: .topLeft,
             gridAnchor: .topLeft
         )
@@ -248,14 +248,14 @@ struct GlobalLayoutConstants {
         return GlobalLayoutConstants(
             deviceLength: 0, // Will be set dynamically
             deviceWidth: 0,  // Will be set dynamically
-            headerHeight: 0.15,          // 15% of device length
+            headerHeight: 0.08,          // 15% of device length
             headerWidth: 1.0,            // 100% of device width
-            bodyHeight: 0.85,            // Calculated: device height minus header height
+            bodyHeight: 0.9,            // Calculated: device height minus header height
             bodyWidth: 1.0,              // 100% of device width
-            gameBoardTopPadding: 0.05,   // 8% of body height
-            gameBoardLeftPadding: 0.2,  // 15% of body width
-            gameBoardBottomPadding: 0.0, // 8% of body height
-            gameBoardRightPadding: 0.2, // 15% of body width
+            gameBoardTopPadding: 0.01,   // 5% of body height
+            gameBoardLeftPadding: 0.17,   // 20% of body width
+            gameBoardBottomPadding: 0.0, // 0% of body height
+            gameBoardRightPadding: 0.17,  // 20% of body width
             gameBoardAnchor: .bottomLeft,
             gridAnchor: .bottomLeft
         )
@@ -266,13 +266,13 @@ struct GlobalLayoutConstants {
         return GlobalLayoutConstants(
             deviceLength: 0, // Will be set dynamically
             deviceWidth: 0,  // Will be set dynamically
-            headerHeight: 0.08,          // 8% of device length
+            headerHeight: 0.05,          // 8% of device length
             headerWidth: 1.0,            // 100% of device width
             bodyHeight: 0.92,            // Calculated: device height minus header height
             bodyWidth: 1.0,              // 100% of device width
-            gameBoardTopPadding: 0.08,   // 8% of body height
+            gameBoardTopPadding: 0.1,   // 6% of body height (your adjustment)
             gameBoardLeftPadding: 0.15,  // 15% of body width
-            gameBoardBottomPadding: 0.08, // 8% of body height
+            gameBoardBottomPadding: 0.1, // 6% of body height (your adjustment)
             gameBoardRightPadding: 0.15, // 15% of body width
             gameBoardAnchor: .topLeft,
             gridAnchor: .topLeft
@@ -284,14 +284,14 @@ struct GlobalLayoutConstants {
         return GlobalLayoutConstants(
             deviceLength: 0, // Will be set dynamically
             deviceWidth: 0,  // Will be set dynamically
-            headerHeight: 0.10,          // 10% of device length
+            headerHeight: 0.05,          // 10% of device length
             headerWidth: 1.0,            // 100% of device width
-            bodyHeight: 0.90,            // Calculated: device height minus header height
+            bodyHeight: 0.95,            // Calculated: device height minus header height
             bodyWidth: 1.0,              // 100% of device width
-            gameBoardTopPadding: 0.10,   // 10% of body height
-            gameBoardLeftPadding: 0.20,  // 20% of body width
-            gameBoardBottomPadding: 0.10, // 10% of body height
-            gameBoardRightPadding: 0.20, // 20% of body width
+            gameBoardTopPadding: 0.05,   // 10% of body height
+            gameBoardLeftPadding: 0.088,  // 20% of body width
+            gameBoardBottomPadding: 0.05, // 10% of body height
+            gameBoardRightPadding: 0.088, // 20% of body width
             gameBoardAnchor: .bottomLeft,
             gridAnchor: .bottomLeft
         )
@@ -306,10 +306,10 @@ struct GlobalLayoutConstants {
             headerWidth: 1.0,            // 100% of device width
             bodyHeight: 0.92,            // Calculated: device height minus header height
             bodyWidth: 1.0,              // 100% of device width
-            gameBoardTopPadding: 0.03,   // 12% of body height
-            gameBoardLeftPadding: 0.5,  // 25% of body width
-            gameBoardBottomPadding: 0.03, // 12% of body height
-            gameBoardRightPadding: 0.5, // 25% of body width
+            gameBoardTopPadding: 0.03,   // 3% of body height
+            gameBoardLeftPadding: 0.5,   // 50% of body width
+            gameBoardBottomPadding: 0.03, // 3% of body height
+            gameBoardRightPadding: 0.5,  // 50% of body width
             gameBoardAnchor: .bottomLeft,
             gridAnchor: .bottomLeft
         )
@@ -320,14 +320,14 @@ struct GlobalLayoutConstants {
         return GlobalLayoutConstants(
             deviceLength: 0, // Will be set dynamically
             deviceWidth: 0,  // Will be set dynamically
-            headerHeight: 0.01,          // 12% of device length
+            headerHeight: 0.01,          // 1% of device length
             headerWidth: 1.0,            // 100% of device width
             bodyHeight: 0.85,            // Calculated: device height minus header height
             bodyWidth: 1.0,              // 100% of device width
-            gameBoardTopPadding: 0.09,   // 15% of body height
-            gameBoardLeftPadding: 0.14,  // 20% of body width
-            gameBoardBottomPadding: 0.01, // 15% of body height
-            gameBoardRightPadding: 0.14, // 20% of body width
+            gameBoardTopPadding: 0.09,   // 9% of body height
+            gameBoardLeftPadding: 0.14,  // 14% of body width
+            gameBoardBottomPadding: 0.01, // 1% of body height
+            gameBoardRightPadding: 0.14, // 14% of body width
             gameBoardAnchor: .bottomLeft,
             gridAnchor: .bottomLeft
         )

@@ -46,5 +46,6 @@ struct HeaderView: View {
 #Preview {
     HeaderView()
         .frame(height: 80)
-        .background(Color(hex: "B7E4CC"))
+            .background(Color(hex: "B7E4CC"))
+//        .background(Color(hex: "ff9300"))
 }

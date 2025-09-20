@@ -22,13 +22,13 @@ struct ContentView: View {
             let bodyWidth = layoutConstants.bodyWidthValue(geometry.size.width)
             
             Color(hex: "B7E4CC")
+//            Color(hex: "009051").opacity(0.7)
                 .ignoresSafeArea()
             
             VStack(spacing: 0) {
                 // Header Section
                 HeaderView()
                     .frame(height: headerHeight)
-                
                 // Body Section
                 BodyView(
                     width: bodyWidth,
