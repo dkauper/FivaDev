@@ -1,0 +1,175 @@
+{
+  "fill" : "automatic",
+  "groups" : [
+    {
+      "layers" : [
+        {
+          "image-name" : "FivaText 2.svg",
+          "name" : "FivaText",
+          "position" : {
+            "scale" : 1.1,
+            "translation-in-points" : [
+              9.9375,
+              -17.0234375
+            ]
+          }
+        },
+        {
+          "hidden" : false,
+          "image-name" : "BlueChip_1024 3.svg",
+          "name" : "BlueChip_1024 1",
+          "position" : {
+            "scale" : 0.17,
+            "translation-in-points" : [
+              -1.5234375,
+              412.0234375
+            ]
+          }
+        },
+        {
+          "hidden" : false,
+          "image-name" : "BlueChip_1024 3.svg",
+          "name" : "BlueChip_1024 2",
+          "position" : {
+            "scale" : 0.17,
+            "translation-in-points" : [
+              0.234375,
+              217.859375
+            ]
+          }
+        },
+        {
+          "hidden" : false,
+          "image-name" : "BlueChip_1024 3.svg",
+          "name" : "BlueChip_1024 3",
+          "position" : {
+            "scale" : 0.17,
+            "translation-in-points" : [
+              -1.6171875,
+              -209.6015625
+            ]
+          }
+        },
+        {
+          "hidden" : false,
+          "image-name" : "BlueChip_1024 3.svg",
+          "name" : "BlueChip_1024 4",
+          "position" : {
+            "scale" : 0.17,
+            "translation-in-points" : [
+              -0.4765625,
+              -406.0078125
+            ]
+          }
+        },
+        {
+          "hidden" : false,
+          "image-name" : "RedChip_1024 2.svg",
+          "name" : "RedChip_1024 1",
+          "position" : {
+            "scale" : 0.17,
+            "translation-in-points" : [
+              -360.984375,
+              352.359375
+            ]
+          }
+        },
+        {
+          "hidden" : false,
+          "image-name" : "RedChip_1024 2.svg",
+          "name" : "RedChip_1024 2",
+          "position" : {
+            "scale" : 0.17,
+            "translation-in-points" : [
+              -211.765625,
+              213.796875
+            ]
+          }
+        },
+        {
+          "hidden" : false,
+          "image-name" : "RedChip_1024 2.svg",
+          "name" : "RedChip_1024 3",
+          "position" : {
+            "scale" : 0.17,
+            "translation-in-points" : [
+              209.359375,
+              -210.2265625
+            ]
+          }
+        },
+        {
+          "hidden" : false,
+          "image-name" : "RedChip_1024 2.svg",
+          "name" : "RedChip_1024 4",
+          "position" : {
+            "scale" : 0.17,
+            "translation-in-points" : [
+              348.8125,
+              -354.2734375
+            ]
+          }
+        },
+        {
+          "hidden" : false,
+          "image-name" : "GreenChip_1024.svg",
+          "name" : "GreenChip_1024_1",
+          "position" : {
+            "scale" : 0.17,
+            "translation-in-points" : [
+              352.0234375,
+              359.109375
+            ]
+          }
+        },
+        {
+          "hidden" : false,
+          "image-name" : "GreenChip_1024.svg",
+          "name" : "GreenChip_1024_2",
+          "position" : {
+            "scale" : 0.17,
+            "translation-in-points" : [
+              204.9765625,
+              214.671875
+            ]
+          }
+        },
+        {
+          "hidden" : false,
+          "image-name" : "GreenChip_1024.svg",
+          "name" : "GreenChip_1024_3",
+          "position" : {
+            "scale" : 0.17,
+            "translation-in-points" : [
+              -216.7265625,
+              -212.921875
+            ]
+          }
+        },
+        {
+          "hidden" : false,
+          "image-name" : "GreenChip_1024.svg",
+          "name" : "GreenChip_1024_4",
+          "position" : {
+            "scale" : 0.17,
+            "translation-in-points" : [
+              -354.5078125,
+              -351.90625
+            ]
+          }
+        }
+      ],
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.5
+      },
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.5
+      }
+    }
+  ],
+  "supported-platforms" : {
+    "squares" : "shared"
+  }
+}
