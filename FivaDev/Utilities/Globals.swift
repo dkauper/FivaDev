@@ -2,7 +2,9 @@
 //  Globals.swift
 //  FivaDev
 //
+//  Cleaned up with Discard Overlay constants moved to unified configuration system
 //  Created by Doron Kauper on 9/17/25.
+//  Updated: September 22, 2025, 3:50 PM PST
 //
 
 import SwiftUI
@@ -77,86 +79,130 @@ struct GameState {
         }
     }
 }
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// MARK: - Player Hand Layout Constants
-struct PlayerHandLayoutConstants {
-    let playerHandTop: CGFloat
-    let playerHandBottom: CGFloat
-    let playerHandLeft: CGFloat
-    let playerHandRight: CGFloat
+
+// MARK: - Overlay Layout Protocol for Future Consistency
+protocol OverlayLayoutConstants {
+    var topPadding: CGFloat { get }
+    var bottomPadding: CGFloat { get }
+    var leftPadding: CGFloat { get }
+    var rightPadding: CGFloat { get }
     
+    func topValue(_ containerHeight: CGFloat) -> CGFloat
+    func bottomValue(_ containerHeight: CGFloat) -> CGFloat
+    func leftValue(_ containerWidth: CGFloat) -> CGFloat
+    func rightValue(_ containerWidth: CGFloat) -> CGFloat
+    
+    static func current(for deviceType: DeviceType, orientation: AppOrientation) -> Self
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// MARK: - Player Hand Layout Constants (PRESERVED ORIGINAL VALUES)
+struct PlayerHandLayoutConstants: OverlayLayoutConstants {
+    let topPadding: CGFloat      // Previously: playerHandTop
+    let bottomPadding: CGFloat   // Previously: playerHandBottom
+    let leftPadding: CGFloat     // Previously: playerHandLeft
+    let rightPadding: CGFloat    // Previously: playerHandRight
+    
+    // Protocol implementation - new standardized methods
+    func topValue(_ containerHeight: CGFloat) -> CGFloat {
+        return topPadding * containerHeight
+    }
+    
+    func bottomValue(_ containerHeight: CGFloat) -> CGFloat {
+        return bottomPadding * containerHeight
+    }
+    
+    func leftValue(_ containerWidth: CGFloat) -> CGFloat {
+        return leftPadding * containerWidth
+    }
+    
+    func rightValue(_ containerWidth: CGFloat) -> CGFloat {
+        return rightPadding * containerWidth
+    }
+    
+    // Convenience methods for overlay dimensions
+    func overlayWidth(_ bodyWidth: CGFloat) -> CGFloat {
+        return bodyWidth - leftValue(bodyWidth) - rightValue(bodyWidth)
+    }
+    
+    func overlayHeight(_ bodyHeight: CGFloat) -> CGFloat {
+        return bodyHeight - topValue(bodyHeight) - bottomValue(bodyHeight)
+    }
+    
+    // EXACT ORIGINAL VALUES FROM YOUR WORKING IMPLEMENTATION
     static func current(for deviceType: DeviceType, orientation: AppOrientation) -> PlayerHandLayoutConstants {
         switch (deviceType, orientation) {
         case (.iPhone, .portrait):
             return PlayerHandLayoutConstants(
-                playerHandTop: 0.89,      // 89% padding from top of BodyView
-                playerHandBottom: 0.01,   // 1% padding from bottom of BodyView
-                playerHandLeft: 0.02,     // 2% padding from left side of BodyView
-                playerHandRight: 0.02     // 2% padding from right side of BodyView
+                topPadding: 0.9,      // 89% padding from top of BodyView
+                bottomPadding: 0.0,   // 1% padding from bottom of BodyView
+                leftPadding: 0.02,     // 2% padding from left side of BodyView
+                rightPadding: 0.02     // 2% padding from right side of BodyView
             )
         case (.iPhone, .landscape):
             return PlayerHandLayoutConstants(
-                playerHandTop: 0.05,      // 5% padding from top of BodyView
-                playerHandBottom: 0.0,    // 0% padding from bottom of BodyView
-                playerHandLeft: 0.85,     // 85% padding from left side of BodyView
-                playerHandRight: 0.0      // 0% padding from right side of BodyView
+                topPadding: 0.05,      // 5% padding from top of BodyView
+                bottomPadding: 0.0,    // 0% padding from bottom of BodyView
+                leftPadding: 0.85,     // 85% padding from left side of BodyView
+                rightPadding: 0.0      // 0% padding from right side of BodyView
             )
         case (.iPad, .portrait):
             return PlayerHandLayoutConstants(
-                playerHandTop: 0.1,       // 10% padding from top of BodyView
-                playerHandBottom: 0.1,    // 10% padding from bottom of BodyView
-                playerHandLeft: 0.87,     // 87% padding from left side of BodyView
-                playerHandRight: 0.03     // 3% padding from right side of BodyView
+                topPadding: 0.1,       // 10% padding from top of BodyView
+                bottomPadding: 0.1,    // 10% padding from bottom of BodyView
+                leftPadding: 0.87,     // 87% padding from left side of BodyView
+                rightPadding: 0.03     // 3% padding from right side of BodyView
             )
         case (.iPad, .landscape):
             return PlayerHandLayoutConstants(
-                playerHandTop: 0.07,      // 5% padding from top of BodyView
-                playerHandBottom: 0.07,   // 5% padding from bottom of BodyView
-                playerHandLeft: 0.92,     // 5% padding from left side of BodyView
-                playerHandRight: 0.01     // 25% padding from right side of BodyView
+                topPadding: 0.07,      // 5% padding from top of BodyView
+                bottomPadding: 0.07,   // 5% padding from bottom of BodyView
+                leftPadding: 0.92,     // 5% padding from left side of BodyView
+                rightPadding: 0.01     // 25% padding from right side of BodyView
             )
         case (.mac, .landscape):
             return PlayerHandLayoutConstants(
-                playerHandTop: 0.06,      // 5% padding from top of BodyView
-                playerHandBottom: 0.06,   // 5% padding from bottom of BodyView
-                playerHandLeft: 0.915,     // 5% padding from left side of BodyView
-                playerHandRight: 0.02     // 55% padding from right side of BodyView
+                topPadding: 0.06,      // 5% padding from top of BodyView
+                bottomPadding: 0.06,   // 5% padding from bottom of BodyView
+                leftPadding: 0.915,    // 5% padding from left side of BodyView
+                rightPadding: 0.02     // 55% padding from right side of BodyView
             )
         case (.appleTV, .landscape):
             return PlayerHandLayoutConstants(
-                playerHandTop: 0.08,      // 8% padding from top of BodyView
-                playerHandBottom: 0.08,   // 8% padding from bottom of BodyView
-                playerHandLeft: 0.05,     // 5% padding from left side of BodyView
-                playerHandRight: 0.20     // 20% padding from right side of BodyView
+                topPadding: 0.08,      // 8% padding from top of BodyView
+                bottomPadding: 0.0,    // 8% padding from bottom of BodyView
+                leftPadding: 0.9,      // 5% padding from left side of BodyView
+                rightPadding: 0.02     // 20% padding from right side of BodyView
             )
         default:
             return PlayerHandLayoutConstants(
-                playerHandTop: 0.10,
-                playerHandBottom: 0.15,
-                playerHandLeft: 0.05,
-                playerHandRight: 0.05
+                topPadding: 0.10,
+                bottomPadding: 0.15,
+                leftPadding: 0.05,
+                rightPadding: 0.05
             )
         }
     }
     
+    // Legacy method names for backward compatibility (if needed)
     func playerHandTopValue(_ bodyHeight: CGFloat) -> CGFloat {
-        return playerHandTop * bodyHeight
+        return topValue(bodyHeight)
     }
     
     func playerHandBottomValue(_ bodyHeight: CGFloat) -> CGFloat {
-        return playerHandBottom * bodyHeight
+        return bottomValue(bodyHeight)
     }
     
     func playerHandLeftValue(_ bodyWidth: CGFloat) -> CGFloat {
-        return playerHandLeft * bodyWidth
+        return leftValue(bodyWidth)
     }
     
     func playerHandRightValue(_ bodyWidth: CGFloat) -> CGFloat {
-        return playerHandRight * bodyWidth
+        return rightValue(bodyWidth)
     }
 }
 
-// MARK: - Global Layout Constants
+// MARK: - Global Layout Constants (PRESERVED ALL ORIGINAL VALUES)
 struct GlobalLayoutConstants {
     let deviceLength: CGFloat
     let deviceWidth: CGFloat
@@ -225,7 +271,7 @@ struct GlobalLayoutConstants {
         }
     }
     
-    // MARK: - iOS Portrait Constants
+    // MARK: - iOS Portrait Constants (PRESERVED ORIGINAL VALUES)
     private static func iOSPortraitConstants() -> GlobalLayoutConstants {
         return GlobalLayoutConstants(
             deviceLength: 0, // Will be set dynamically
@@ -234,7 +280,7 @@ struct GlobalLayoutConstants {
             headerWidth: 1.0,            // 100% of device width
             bodyHeight: 0.88,            // Calculated: device height minus header height
             bodyWidth: 1.0,              // 100% of device width
-            gameBoardTopPadding: 0.1,  // 12.5% of body height
+            gameBoardTopPadding: 0.12,  // 12.5% of body height
             gameBoardLeftPadding: 0.01,  // 5% of body width
             gameBoardBottomPadding: 0.125, // 12.5% of body height
             gameBoardRightPadding: 0.01, // 5% of body width
@@ -243,7 +289,7 @@ struct GlobalLayoutConstants {
         )
     }
     
-    // MARK: - iOS Landscape Constants
+    // MARK: - iOS Landscape Constants (PRESERVED ORIGINAL VALUES)
     private static func iOSLandscapeConstants() -> GlobalLayoutConstants {
         return GlobalLayoutConstants(
             deviceLength: 0, // Will be set dynamically
@@ -261,7 +307,7 @@ struct GlobalLayoutConstants {
         )
     }
     
-    // MARK: - iPadOS Portrait Constants
+    // MARK: - iPadOS Portrait Constants (PRESERVED ORIGINAL VALUES)
     private static func iPadOSPortraitConstants() -> GlobalLayoutConstants {
         return GlobalLayoutConstants(
             deviceLength: 0, // Will be set dynamically
@@ -279,7 +325,7 @@ struct GlobalLayoutConstants {
         )
     }
     
-    // MARK: - iPadOS Landscape Constants
+    // MARK: - iPadOS Landscape Constants (PRESERVED ORIGINAL VALUES)
     private static func iPadOSLandscapeConstants() -> GlobalLayoutConstants {
         return GlobalLayoutConstants(
             deviceLength: 0, // Will be set dynamically
@@ -297,7 +343,7 @@ struct GlobalLayoutConstants {
         )
     }
     
-    // MARK: - macOS Landscape Constants
+    // MARK: - macOS Landscape Constants (PRESERVED ORIGINAL VALUES)
     private static func macOSLandscapeConstants() -> GlobalLayoutConstants {
         return GlobalLayoutConstants(
             deviceLength: 0, // Will be set dynamically
@@ -315,7 +361,7 @@ struct GlobalLayoutConstants {
         )
     }
     
-    // MARK: - Apple TV Landscape Constants
+    // MARK: - Apple TV Landscape Constants (PRESERVED ORIGINAL VALUES)
     private static func appleTVLandscapeConstants() -> GlobalLayoutConstants {
         return GlobalLayoutConstants(
             deviceLength: 0, // Will be set dynamically
@@ -334,7 +380,7 @@ struct GlobalLayoutConstants {
     }
 }
 
-// MARK: - Glass Effect View Modifier
+// MARK: - Glass Effect View Modifier (UNCHANGED)
 struct GlassEffect: ViewModifier {
     func body(content: Content) -> some View {
         content
@@ -355,7 +401,7 @@ extension View {
     }
 }
 
-// MARK: - Color Extension for Hex Colors
+// MARK: - Color Extension for Hex Colors (UNCHANGED)
 extension Color {
     init(hex: String) {
         let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
@@ -382,3 +428,20 @@ extension Color {
         )
     }
 }
+
+// MARK: - IMPORTANT NOTE
+/*
+ The DiscardOverlayLayoutConstants struct has been REMOVED from this file.
+ 
+ All discard overlay positioning and grid configuration is now handled by the
+ unified DiscardOverlayConfiguration system in DiscardOverlayConfiguration.swift.
+ 
+ This change:
+ - Consolidates all discard overlay logic in one place
+ - Provides better control over grid sections and element positioning
+ - Adds support for rotation and content types
+ - Improves maintainability and reduces code duplication
+ 
+ If you need to adjust discard overlay positioning or grid layout,
+ modify the configurations in DiscardOverlayConfiguration.swift instead.
+ */

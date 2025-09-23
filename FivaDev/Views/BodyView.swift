@@ -2,7 +2,9 @@
 //  BodyView.swift
 //  FivaDev
 //
+//  Enhanced with new layout system compatibility
 //  Created by Doron Kauper on 9/17/25.
+//  Updated: September 22, 2025, 2:50 PM
 //
 
 import SwiftUI
@@ -30,12 +32,20 @@ struct BodyView: View {
             )
             .environmentObject(gameStateManager)
             
-            // Player Hand Overlay
+            // Discard Overlay - now self-contained with no extra parameters needed
+            DiscardOverlayView(
+                bodyWidth: width,
+                bodyHeight: height,
+                layoutConstants: layoutConstants,
+                orientation: orientation
+            )
+            .environmentObject(gameStateManager)
+            
+            // Player Hand Overlay - now self-contained with no extra parameters needed
             PlayerHandView(
                 bodyWidth: width,
                 bodyHeight: height,
                 layoutConstants: layoutConstants,
-                playerHandConstants: PlayerHandLayoutConstants.current(for: DeviceType.current, orientation: orientation),
                 orientation: orientation
             )
             .environmentObject(gameStateManager)
@@ -44,10 +54,51 @@ struct BodyView: View {
     }
 }
 
-#Preview {
+// MARK: - Enhanced Preview Support
+#Preview("iPhone Portrait") {
     GeometryReader { geometry in
-        let deviceType = DeviceType.current
-        let orientation = AppOrientation.current(geometry: geometry)
+        let deviceType = DeviceType.iPhone
+        let orientation = AppOrientation.portrait
+        let layoutConstants = GlobalLayoutConstants.current(for: deviceType, orientation: orientation)
+        let bodyHeight = layoutConstants.bodyHeightValue(geometry.size.height)
+        let bodyWidth = layoutConstants.bodyWidthValue(geometry.size.width)
+        
+        BodyView(
+            width: bodyWidth,
+            height: bodyHeight,
+            layoutConstants: layoutConstants,
+            orientation: orientation,
+            geometry: geometry
+        )
+        .environmentObject(GameStateManager())
+    }
+    .background(Color(hex: "B7E4CC"))
+}
+
+#Preview("iPad Landscape") {
+    GeometryReader { geometry in
+        let deviceType = DeviceType.iPad
+        let orientation: AppOrientation = .landscape
+        let layoutConstants = GlobalLayoutConstants.current(for: deviceType, orientation: orientation)
+        let bodyHeight = layoutConstants.bodyHeightValue(geometry.size.height)
+        let bodyWidth = layoutConstants.bodyWidthValue(geometry.size.width)
+        
+        BodyView(
+            width: bodyWidth,
+            height: bodyHeight,
+            layoutConstants: layoutConstants,
+            orientation: orientation,
+            geometry: geometry
+        )
+        .environmentObject(GameStateManager())
+    }
+    .background(Color(hex: "B7E4CC"))
+}
+
+#Preview("Mac Landscape") {
+    GeometryReader { geometry in
+        let deviceType = DeviceType.mac
+        let orientation: AppOrientation = .landscape
         let layoutConstants = GlobalLayoutConstants.current(for: deviceType, orientation: orientation)
         let bodyHeight = layoutConstants.bodyHeightValue(geometry.size.height)
         let bodyWidth = layoutConstants.bodyWidthValue(geometry.size.width)

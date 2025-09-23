@@ -7,10 +7,6 @@
 
 import SwiftUI
 
-#if canImport(UIKit)
-import UIKit
-#endif
-
 struct GameGridElement: View {
     let position: Int
     let width: CGFloat
@@ -31,17 +27,6 @@ struct GameGridElement: View {
         "QS", "9H", "7D", "6D", "5D", "4D", "3D", "2D", "AS", "7C",
         "10S", "10H", "QH", "KH", "AH", "2C", "3C", "4C", "5C", "6C",
         "BlackJoker", "9S", "8S", "7S", "6S", "5S", "4S", "3S", "2S", "RedJoker"
-        
-//        "RedJoker", "5D", "6D", "7D", "8D", "9D", "QD", "KD", "AD", "BlackJoker",
-//        "5D", "3H", "2H", "2S", "3S", "4S", "5S", "6S", "7S", "AC",
-//        "4D", "4H", "KD", "AD", "KS", "QS", "JS", "10S", "9S", "KS",
-//        "2D", "5H", "QD", "KD", "6H", "7H", "8H", "9C", "8S", "QS",
-//        "AD", "6H", "8D", "KD", "5H", "4H", "6H", "10C", "9S", "10C",
-//        "AS", "7H", "9D", "3H", "4H", "7H", "9C", "JS", "8C", "9C",
-//        "KS", "8H", "10D", "2C", "3C", "4C", "5C", "KS", "7C", "8C",
-//        "QS", "9H", "JD", "KD", "AH", "2C", "3C", "4C", "5C", "6C",
-//        "10S", "10H", "QD", "3S", "4S", "5S", "6S", "7S", "AS", "7C",
-//        "BlackJoker", "9S", "8S", "7S", "6S", "5S", "4S", "3S", "2S", "RedJoker"
     ]
     
     private var cardName: String {
@@ -52,69 +37,40 @@ struct GameGridElement: View {
     }
     
     var body: some View {
-        let shouldHighlight = gameStateManager.shouldHighlight(position: position)
-        
-        ZStack {
-            // Card background with rounded corners
-            RoundedRectangle(cornerRadius: 6)
-                .fill(Color.white)
-//                .stroke(Color.black.opacity(0.9), lineWidth: 3)
-//                .stroke(Color(hex: "009051").opacity(0.9), lineWidth: 3)
-                .stroke(Color(hex: "009051"), lineWidth: 4)
-            
-            // Card image
+        ElevatedCard(
+            width: width,
+            height: height,
+            isHighlighted: gameStateManager.shouldHighlight(position: position),
+            highlightScale: 1.5, // Your preferred 50% increase
+            zIndex: Double(position),
+            highlightZIndex: 10000
+        ) {
             #if canImport(UIKit)
             if let cardImage = UIImage(named: cardName) {
                 Image(uiImage: cardImage)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
-                    .clipShape(RoundedRectangle(cornerRadius: 2))
-                    .padding(0)
             } else {
                 // Fallback if image not found
-                cardFallbackView
+                VStack {
+                    Text(cardName)
+                        .font(.caption2)
+                        .foregroundColor(.black)
+                        .multilineTextAlignment(.center)
+                    Text("\(position)")
+                        .font(.caption2)
+                        .foregroundColor(.gray)
+                }
+                .padding(2)
             }
             #else
-            // Use SwiftUI Image for non-UIKit platforms (macOS, etc.)
             Image(cardName)
                 .resizable()
                 .aspectRatio(contentMode: .fit)
-                .clipShape(RoundedRectangle(cornerRadius: 2))
-                .padding(2)
             #endif
         }
-        .frame(width: width, height: height)
-        .scaleEffect(shouldHighlight ? 1.5 : 1.0)
-        .background(
-            Group {
-                if shouldHighlight {
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(.ultraThinMaterial)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 8)
-                                .stroke(.white.opacity(0.2), lineWidth: 1)
-                        )
-                } else {
-                    Color.clear
-                }
-            }
-        )
-        .opacity(shouldHighlight ? 1.0 : (gameStateManager.highlightedCards.isEmpty ? 1.0 : 0.7))
-        .animation(.easeInOut(duration: 0.2), value: shouldHighlight)
-        .zIndex(shouldHighlight ? 1 : 0)
-    }
-    
-    private var cardFallbackView: some View {
-        VStack {
-            Text(cardName)
-                .font(.caption2)
-                .foregroundColor(.black)
-                .multilineTextAlignment(.center)
-            Text("\(position)")
-                .font(.caption2)
-                .foregroundColor(.gray)
-        }
-        .padding(2)
+        .opacity(gameStateManager.shouldHighlight(position: position) ? 1.0 :
+                (gameStateManager.highlightedCards.isEmpty ? 1.0 : 0.7))
     }
 }
 
@@ -123,7 +79,7 @@ struct GameGridElement: View {
         position: 0,
         width: 40,
         height: 60,
-        orientation: .portrait
+        orientation: AppOrientation.portrait
     )
     .environmentObject(GameStateManager())
     .padding()
@@ -134,7 +90,7 @@ struct GameGridElement: View {
         position: 50,
         width: 40,
         height: 60,
-        orientation: .portrait
+        orientation: AppOrientation.portrait
     )
     .environmentObject(GameStateManager())
     .padding()

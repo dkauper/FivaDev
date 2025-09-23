@@ -24,7 +24,7 @@ struct GameGrid: View {
 //            Rectangle()
 //                .fill(Color(hex: "eabf90"))//.opacity(0.1))
 //                .frame(width: width, height: height)
-//            
+//
             buildGrid()
         }
     }
@@ -42,7 +42,7 @@ struct GameGrid: View {
                     position: index,
                     width: cellDims.width,
                     height: cellDims.height,
-                    orientation: .portrait
+                    orientation: AppOrientation.portrait
                 )
                 .environmentObject(gameStateManager)
             }
@@ -52,7 +52,7 @@ struct GameGrid: View {
         if orientation == .landscape {
             return AnyView(
                 grid
-                    .rotationEffect(.degrees(-90))
+                    .rotationEffect(Angle.degrees(-90))
                     .frame(width: width, height: height)
             )
         } else {
@@ -109,16 +109,18 @@ struct GameGrid: View {
     GameGrid(
         width: 400,
         height: 600,
-        anchor: .topLeft,
-        orientation: .portrait
+        anchor: AnchorPosition.topLeft,
+        orientation: AppOrientation.portrait
     )
+    .environmentObject(GameStateManager())
 }
 
 #Preview("Landscape") {
     GameGrid(
         width: 600,
         height: 400,
-        anchor: .bottomLeft,
-        orientation: .landscape
+        anchor: AnchorPosition.bottomLeft,
+        orientation: AppOrientation.landscape
     )
+    .environmentObject(GameStateManager())
 }

@@ -2,7 +2,9 @@
 //  PlayerHandView.swift
 //  FivaDev
 //
+//  Enhanced with new layout system compatibility
 //  Created by Doron Kauper on 9/18/25.
+//  Updated: September 22, 2025, 2:45 PM
 //
 
 import SwiftUI
@@ -11,11 +13,19 @@ struct PlayerHandView: View {
     let bodyWidth: CGFloat
     let bodyHeight: CGFloat
     let layoutConstants: GlobalLayoutConstants
-    let playerHandConstants: PlayerHandLayoutConstants
     let orientation: AppOrientation
     
     @EnvironmentObject var gameStateManager: GameStateManager
     @State private var hoveredCardIndex: Int? = nil
+    @State private var touchedCardIndex: Int? = nil
+    
+    // Use the enhanced layout system (no longer need to pass playerHandConstants)
+    private var playerHandConstants: PlayerHandLayoutConstants {
+        PlayerHandLayoutConstants.current(
+            for: DeviceType.current,
+            orientation: orientation
+        )
+    }
     
     // Sample cards for the current player (will be replaced with actual game state)
     private var playerCards: [String] {
@@ -23,13 +33,15 @@ struct PlayerHandView: View {
     }
     
     var body: some View {
-        let topPadding = playerHandConstants.playerHandTopValue(bodyHeight)
-        let bottomPadding = playerHandConstants.playerHandBottomValue(bodyHeight)
-        let leftPadding = playerHandConstants.playerHandLeftValue(bodyWidth)
-        let rightPadding = playerHandConstants.playerHandRightValue(bodyWidth)
+        // Use the new protocol methods instead of the old specific method names
+        let topPadding = playerHandConstants.topValue(bodyHeight)
+        let bottomPadding = playerHandConstants.bottomValue(bodyHeight)
+        let leftPadding = playerHandConstants.leftValue(bodyWidth)
+        let rightPadding = playerHandConstants.rightValue(bodyWidth)
         
-        let handWidth = bodyWidth - leftPadding - rightPadding
-        let handHeight = bodyHeight - topPadding - bottomPadding
+        // Use convenience methods for cleaner code
+        let handWidth = playerHandConstants.overlayWidth(bodyWidth)
+        let handHeight = playerHandConstants.overlayHeight(bodyHeight)
         
         VStack(spacing: 0) {
             // Top padding
@@ -56,7 +68,6 @@ struct PlayerHandView: View {
         .frame(width: bodyWidth, height: bodyHeight)
     }
     
-    
     private func playerHandOverlay(width: CGFloat, height: CGFloat) -> some View {
         let overlayPadding: CGFloat = 8
         
@@ -68,12 +79,10 @@ struct PlayerHandView: View {
         .background(
             RoundedRectangle(cornerRadius: 12)
                 .fill(.ultraThinMaterial)
-                .stroke(.red.opacity(0.6), lineWidth: 2) // Added visible border
+                .stroke(.red.opacity(0.6), lineWidth: 2)
         )
         .frame(width: width, height: height)
     }
-    
-    // Remove overlayHeader function since we no longer need it
     
     private func cardsGridContainer(availableWidth: CGFloat, availableHeight: CGFloat) -> some View {
         GeometryReader { geometry in
@@ -112,7 +121,11 @@ struct PlayerHandView: View {
     }
     
     private func playerCardView(cardName: String, width: CGFloat, height: CGFloat, index: Int) -> some View {
-        ZStack {
+        let isHovered = hoveredCardIndex == index
+        let isTouched = touchedCardIndex == index
+        let isActive = isHovered || isTouched
+        
+        return ZStack {
             // Card background
             RoundedRectangle(cornerRadius: 4)
                 .fill(Color.white.opacity(0.3))
@@ -127,15 +140,65 @@ struct PlayerHandView: View {
         }
         .frame(width: width, height: height)
         .glassEffect()
-        .scaleEffect(hoveredCardIndex == index ? 1.1 : 1.0)
-        .animation(.easeInOut(duration: 0.2), value: hoveredCardIndex)
+        .scaleEffect(isActive ? 1.1 : 1.0)
+        .animation(.easeInOut(duration: 0.2), value: isActive)
+        .overlay(
+            // Subtle border highlight when active
+            RoundedRectangle(cornerRadius: 4)
+                .stroke(Color.blue.opacity(isActive ? 0.4 : 0), lineWidth: 1)
+                .animation(.easeInOut(duration: 0.2), value: isActive)
+        )
+        #if !os(tvOS)
         .onHover { isHovering in
+            // Immediate state update for responsiveness
             hoveredCardIndex = isHovering ? index : nil
-            gameStateManager.highlightCard(cardName, highlight: isHovering)
+            
+            // Use async to ensure proper timing for game state updates
+            Task { @MainActor in
+                gameStateManager.highlightCard(cardName, highlight: isHovering)
+            }
         }
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { _ in
+                    // Touch/press started
+                    if touchedCardIndex != index {
+                        touchedCardIndex = index
+                        Task { @MainActor in
+                            gameStateManager.highlightCard(cardName, highlight: true)
+                        }
+                    }
+                }
+                .onEnded { _ in
+                    // Touch/press ended
+                    touchedCardIndex = nil
+                    Task { @MainActor in
+                        gameStateManager.highlightCard(cardName, highlight: false)
+                    }
+                }
+        )
+        #else
+        // tvOS: Use focus-based interaction
+        .focusable(true) { isFocused in
+            // Focus-based highlighting for Apple TV
+            hoveredCardIndex = isFocused ? index : nil
+            Task { @MainActor in
+                gameStateManager.highlightCard(cardName, highlight: isFocused)
+            }
+        }
+        #endif
         .onTapGesture {
-            // Handle card selection/play
+            // Handle card selection/play with enhanced feedback
             playCard(at: index)
+        }
+        .onChange(of: isActive) { _, newValue in
+            // Enhanced haptic feedback on iOS when card becomes active
+            #if canImport(UIKit) && !os(tvOS)
+            if newValue {
+                let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+                impactFeedback.impactOccurred()
+            }
+            #endif
         }
     }
     
@@ -213,18 +276,26 @@ struct PlayerHandView: View {
     }
     
     private func playCard(at index: Int) {
-        // TODO: Implement card playing logic
+        // Enhanced card playing logic with visual feedback
+        let cardName = playerCards[index]
+        print("Playing card: \(cardName) at index \(index)")
+        
+        // Add visual feedback for card selection
+        withAnimation(.spring(duration: 0.3)) {
+            // Could add temporary effects here like removing from hand
+        }
+        
+        // TODO: Implement actual card playing logic
         // This will integrate with the game state management
-        print("Playing card: \(playerCards[index]) at index \(index)")
     }
 }
 
-#Preview("Portrait") {
+// MARK: - Enhanced Preview Support
+#Preview("iPhone Portrait") {
     GeometryReader { geometry in
-        let deviceType = DeviceType.current
-        let orientation = AppOrientation.current(geometry: geometry)
+        let deviceType = DeviceType.iPhone
+        let orientation = AppOrientation.portrait
         let layoutConstants = GlobalLayoutConstants.current(for: deviceType, orientation: orientation)
-        let playerHandConstants = PlayerHandLayoutConstants.current(for: deviceType, orientation: orientation)
         let bodyHeight = layoutConstants.bodyHeightValue(geometry.size.height)
         let bodyWidth = layoutConstants.bodyWidthValue(geometry.size.width)
         
@@ -232,20 +303,18 @@ struct PlayerHandView: View {
             bodyWidth: bodyWidth,
             bodyHeight: bodyHeight,
             layoutConstants: layoutConstants,
-            playerHandConstants: playerHandConstants,
             orientation: orientation
         )
         .environmentObject(GameStateManager())
     }
-//    .background(Color(hex: "B7E4CC"))
-    .background(Color(hex: "eabf90"))}
+    .background(Color(hex: "B7E4CC"))
+}
 
-#Preview("Landscape") {
+#Preview("iPad Landscape") {
     GeometryReader { geometry in
-        let deviceType = DeviceType.current
+        let deviceType = DeviceType.iPad
         let orientation: AppOrientation = .landscape
         let layoutConstants = GlobalLayoutConstants.current(for: deviceType, orientation: orientation)
-        let playerHandConstants = PlayerHandLayoutConstants.current(for: deviceType, orientation: orientation)
         let bodyHeight = layoutConstants.bodyHeightValue(geometry.size.height)
         let bodyWidth = layoutConstants.bodyWidthValue(geometry.size.width)
         
@@ -253,10 +322,28 @@ struct PlayerHandView: View {
             bodyWidth: bodyWidth,
             bodyHeight: bodyHeight,
             layoutConstants: layoutConstants,
-            playerHandConstants: playerHandConstants,
             orientation: orientation
         )
         .environmentObject(GameStateManager())
     }
-    .background(Color(hex: "eabf90"))}
-//    .background(Color(hex: "B7E4CC"))}
+    .background(Color(hex: "B7E4CC"))
+}
+
+#Preview("Mac Landscape") {
+    GeometryReader { geometry in
+        let deviceType = DeviceType.mac
+        let orientation: AppOrientation = .landscape
+        let layoutConstants = GlobalLayoutConstants.current(for: deviceType, orientation: orientation)
+        let bodyHeight = layoutConstants.bodyHeightValue(geometry.size.height)
+        let bodyWidth = layoutConstants.bodyWidthValue(geometry.size.width)
+        
+        PlayerHandView(
+            bodyWidth: bodyWidth,
+            bodyHeight: bodyHeight,
+            layoutConstants: layoutConstants,
+            orientation: orientation
+        )
+        .environmentObject(GameStateManager())
+    }
+    .background(Color(hex: "B7E4CC"))
+}
