@@ -384,7 +384,7 @@ struct DiscardOverlayView: View {
                 // Standard layout - works for normal horizontal text
                 VStack(spacing: 2) {
                     Text(headerText)
-                        .font(.system(size: 8, weight: .regular, design: .default))
+                        .font(.system(size: 9, weight: .regular, design: .default))
                         .foregroundColor(.red)
                     
                     Text(bodyText)
@@ -568,6 +568,7 @@ struct DiscardOverlayView: View {
         }
     }
     
+    // MARK: - Enhanced Game Score Element with Vertical Text Support and Stroke
     private func gameScoreElement(
         width: CGFloat,
         height: CGFloat,
@@ -576,30 +577,32 @@ struct DiscardOverlayView: View {
         Group {
             switch layout.contentType {
             case .text(let content):
+                // Use traditional formatting for score display to maintain blue/red colors
                 VStack(spacing: 1) {
                     Text(content)
                         .font(.caption2)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(.red)
                     
                     HStack(spacing: 4) {
                         Text("2")
-                            .font(.title3)
+                            .font(.subheadline)
                             .fontWeight(.bold)
                             .foregroundColor(.blue)
                         Text("-")
                             .font(.title3)
                             .foregroundColor(.secondary)
                         Text("1")
-                            .font(.title3)
+                            .font(.subheadline)
                             .fontWeight(.bold)
                             .foregroundColor(.red)
                     }
                 }
             case .dynamic:
+                // Use traditional formatting for score display to maintain blue/red colors
                 VStack(spacing: 1) {
                     Text("Score")
                         .font(.caption2)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(.red)
                     
                     HStack(spacing: 4) {
                         Text("2")
@@ -616,10 +619,11 @@ struct DiscardOverlayView: View {
                     }
                 }
             case .combined(_, let text):
+                // Use traditional formatting for score display to maintain blue/red colors
                 VStack(spacing: 1) {
                     Text(text)
                         .font(.caption2)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(.red)
                     
                     HStack(spacing: 4) {
                         Text("2")
@@ -636,85 +640,79 @@ struct DiscardOverlayView: View {
                     }
                 }
             case .image:
-                HStack(spacing: 4) {
-                    Text("2")
-                        .font(.caption)
-                        .fontWeight(.bold)
-                        .foregroundColor(.blue)
-                    Text("-")
-                        .font(.caption2)
-                        .foregroundColor(.secondary)
-                    Text("1")
-                        .font(.caption)
-                        .fontWeight(.bold)
-                        .foregroundColor(.red)
-                }
+                // Fallback to traditional score display for image content type
+                            // Fallback to traditional score display for image content type
+                            HStack(spacing: 4) {
+                                Text("2")
+                                    .font(.caption)
+                                    .fontWeight(.bold)
+                                    .foregroundColor(.blue)
+                                Text("-")
+                                    .font(.caption2)
+                                    .foregroundColor(.secondary)
+                                Text("1")
+                                    .font(.caption)
+                                    .fontWeight(.bold)
+                                    .foregroundColor(.red)
+                            }
             }
         }
         .frame(width: width, height: height)
         .padding(2)
         .background(
             RoundedRectangle(cornerRadius: 4)
-                .fill(.white)
-                .stroke(.green.opacity(0.6), lineWidth: 2)
+                .fill(.white.opacity(0.6))
+                .stroke(.green.opacity(0.8), lineWidth: 2)
         )
     }
     
-    private func turnTimerElement(
-        width: CGFloat,
-        height: CGFloat,
-        layout: DiscardElementLayout
-    ) -> some View {
-        Group {
-            switch layout.contentType {
-            case .text(let content):
-                VStack(spacing: 1) {
-                    Text(content)
-                        .font(.caption2)
-                        .foregroundColor(.secondary)
-                    
-                    Text("0:45")
-                        .font(.title3)
-                        .fontWeight(.bold)
-                        .foregroundColor(.orange)
-                }
-            case .dynamic:
-                VStack(spacing: 1) {
-                    Text("Timer")
-                        .font(.caption2)
-                        .foregroundColor(.secondary)
-                    
-                    Text("0:45")
+    // MARK: - Enhanced Turn Timer Element with Vertical Text Support and Stroke
+        private func turnTimerElement(
+            width: CGFloat,
+            height: CGFloat,
+            layout: DiscardElementLayout
+        ) -> some View {
+            Group {
+                switch layout.contentType {
+                case .text(let content):
+                    enhancedTextView(
+                        headerText: content,
+                        bodyText: "0:45", // TODO: Replace with actual timer value from game state
+                        width: width,
+                        height: height,
+                        textLayoutMode: layout.textLayoutMode
+                    )
+                case .dynamic:
+                    enhancedTextView(
+                        headerText: "Timer",
+                        bodyText: "0:45", // TODO: Replace with actual timer value from game state
+                        width: width,
+                        height: height,
+                        textLayoutMode: layout.textLayoutMode
+                    )
+                case .combined(_, let text):
+                    enhancedTextView(
+                        headerText: text,
+                        bodyText: "0:45", // TODO: Replace with actual timer value from game state
+                        width: width,
+                        height: height,
+                        textLayoutMode: layout.textLayoutMode
+                    )
+                case .image:
+                    // Fallback to simple text display for image content type
+                    Text("0:45") // TODO: Replace with actual timer value from game state
                         .font(.caption)
                         .fontWeight(.bold)
                         .foregroundColor(.orange)
+                        .frame(width: width, height: height)
+                        .background(
+                            RoundedRectangle(cornerRadius: 4)
+                                .fill(.white.opacity(0.6))
+                                .stroke(.white.opacity(0.8), lineWidth: 2)
+                        )
                 }
-            case .combined(_, let text):
-                VStack(spacing: 1) {
-                    Text(text)
-                        .font(.caption2)
-                        .foregroundColor(.secondary)
-                    
-                    Text("0:45")
-                        .font(.caption)
-                        .fontWeight(.bold)
-                        .foregroundColor(.orange)
-                }
-            case .image:
-                Text("0:45")
-                    .font(.caption)
-                    .fontWeight(.bold)
-                    .foregroundColor(.orange)
             }
         }
-        .frame(width: width, height: height)
-        .padding(2)
-        .background(
-            RoundedRectangle(cornerRadius: 4)
-                .fill(.white)
-                .stroke(.green.opacity(0.6), lineWidth: 2)
-        )
-    }
     
     private func actionButtonElement(
         width: CGFloat,

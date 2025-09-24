@@ -269,8 +269,8 @@ struct DiscardOverlayConfiguration {
                 .turnTimer: DiscardElementLayout(
                     topPadding: 0.08,       // 80% from top of overlay (fourth section)
                     bottomPadding: 0.08,   // 5% from bottom of overlay
-                    leftPadding: 0.72,     // 5% from left of overlay
-                    rightPadding: 0.17,    // 5% from right of overlay
+                    leftPadding: 0.715,     // 5% from left of overlay
+                    rightPadding: 0.168,    // 5% from right of overlay
                     isVisible: true,
                     priority: 5,
                     rotation: .degrees(0),
@@ -296,45 +296,80 @@ struct DiscardOverlayConfiguration {
     private static func iPhoneLandscapeConfiguration() -> DiscardOverlayConfiguration {
         return DiscardOverlayConfiguration(
             overlayPosition: OverlayPosition(
-                topPadding: 0.05,      // 5% padding from top of BodyView
-                bottomPadding: 0.022,    // 0% padding from bottom of BodyView
-                leftPadding: 0.06,     // 5% padding from left side of BodyView
-                rightPadding: 0.80     // 80% padding from right side of BodyView (WIDER FOR TEXT)
+                topPadding: 0.04,      // % padding from top of BodyView
+                bottomPadding: 0.015,    // % padding from bottom of BodyView
+                leftPadding: 0.033,     // % padding from left side of BodyView
+                rightPadding: 0.86     // % padding from right side of BodyView (WIDER FOR TEXT)
             ),
-            gridSections: 3,
+            gridSections: 6,
             gridOrientation: .vertical,    // Sections flow top to bottom
             gridRotation: .degrees(0),    // No grid rotation
-            sectionProportions: [0.25, 0.5, 0.25],  // Top 25%, middle 50%, bottom 25%
+            sectionProportions: [0.2, 0.2, 0.1, 0.1, 0.2, 0.2],  // Top 25%, middle 50%, bottom 25%
             gridPadding: 0.02,  // 2% internal padding
             elements: [
                 .lastCardPlayed: DiscardElementLayout(
-                    topPadding: 0.045,      // 4.5% from top of overlay (middle section)
-                    bottomPadding: 0.78,   // 78% from bottom of overlay
-                    leftPadding: 0.13,      // 13% from left of overlay
-                    rightPadding: 0.1,     // 10% from right of overlay
-                    isVisible: false,
+                    topPadding: 0.015,      // 4.5% from top of overlay (middle section)
+                    bottomPadding: 0.81,   // 78% from bottom of overlay
+                    leftPadding: 0.22,      // 13% from left of overlay
+                    rightPadding: 0.19,     // 10% from right of overlay
+                    isVisible: true,
                     priority: 1,
                     rotation: .degrees(0),
                     contentType: .image(),
                     textLayoutMode: .standard
                 ),
-                .currentPlayerInfo: DiscardElementLayout(
-                    topPadding: 0.0,      // 0% from top of overlay (full middle section)
-                    bottomPadding: 0.0,   // 0% from bottom of overlay (full height)
-                    leftPadding: 0.02,    // 2% from left of overlay (MORE ROOM)
-                    rightPadding: 0.02,   // 2% from right of overlay (MORE ROOM)
+                .turnTimer: DiscardElementLayout(
+                    topPadding: 0.215,       // 80% from top of overlay (fourth section)
+                    bottomPadding: 0.605,   // 5% from bottom of overlay
+                    leftPadding: 0.275,     // 5% from left of overlay
+                    rightPadding: 0.225,    // 5% from right of overlay
                     isVisible: true,
                     priority: 2,
-                    rotation: .degrees(-90),
+                    rotation: .degrees(0),
+                    contentType: .text(content: "Timer"),
+//                    contentType: .image(),
+                    textLayoutMode: .standard
+                ),
+                .nextPlayer: DiscardElementLayout(
+                    topPadding: 0.415,      // 45% from top of overlay (middle section)
+                    bottomPadding: 0.5,   // 35% from bottom of overlay
+                    leftPadding: 0.072,     // 55% from left of overlay
+                    rightPadding: 0.03,    // 5% from right of overlay
+                    isVisible: true,
+                    priority: 3,
+                    rotation: .degrees(0),
+                    contentType: .text(content: "Next Player"),
+                    textLayoutMode: .standard
+                ),
+                .currentPlayerInfo: DiscardElementLayout(
+                    topPadding: 0.51,      // 0% from top of overlay (full middle section)
+                    bottomPadding: 0.4,   // 0% from bottom of overlay (full height)
+                    leftPadding: 0.072,    // 2% from left of overlay (MORE ROOM)
+                    rightPadding: 0.03,   // 2% from right of overlay (MORE ROOM)
+                    isVisible: true,
+                    priority: 4,
+                    rotation: .degrees(0),
                     contentType: .text(content: "Current Player"),
-                    textLayoutMode: .verticalExpanded  // EXPANDED LAYOUT FOR VERTICAL TEXT
+                    textLayoutMode: .standard  // EXPANDED LAYOUT FOR VERTICAL TEXT
+                ),
+                .gameScore: DiscardElementLayout(
+                    topPadding: 0.62,      // 35% from top of overlay (second section)
+                    bottomPadding: 0.21,    // 50% from bottom of overlay
+                    leftPadding: 0.275,     // 5% from left of overlay
+                    rightPadding: 0.225,    // 5% from right of overlay
+                    isVisible: true,
+                    priority: 5,
+                    rotation: .degrees(0),
+                    contentType: .text(content: "Score"),
+//                    contentType: .image(),
+                    textLayoutMode: .standard
                 ),
                 .mostRecentDiscard: DiscardElementLayout(
-                    topPadding: 0.78,      // 78% from top of overlay
-                    bottomPadding: 0.045,   // 4.5% from bottom of overlay (bottom section)
-                    leftPadding: 0.13,      // 13% from left of overlay
-                    rightPadding: 0.1,     // 10% from right of overlay
-                    isVisible: false,
+                    topPadding: 0.817,      // 78% from top of overlay
+                    bottomPadding: 0.006,   // 4.5% from bottom of overlay (bottom section)
+                    leftPadding: 0.22,      // 13% from left of overlay
+                    rightPadding: 0.19,     // 10% from right of overlay
+                    isVisible: true,
                     priority: 3,
                     rotation: .degrees(0),
                     contentType: .image(),
