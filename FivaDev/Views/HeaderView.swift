@@ -3,7 +3,7 @@
 //  FivaDev
 //
 //  Cross-platform header view with fixed app icon loading
-//  Updated: September 22, 2025, 3:20 PM
+//  Updated: September 29, 2025, 12:30 PM PDT
 //
 
 import SwiftUI
@@ -15,7 +15,12 @@ struct HeaderView: View {
             Color.clear.background(.ultraThinMaterial)
             
             HStack{
-                Text("Left")
+                // Restart icon with palette rendering
+                Image(systemName: "plus.circle")
+                    .symbolRenderingMode(.palette)
+                    .foregroundStyle(.red, .blue)
+                    .font(.largeTitle)
+                    .padding(.leading, 18)
                 Spacer()
             }
             
@@ -50,7 +55,12 @@ struct HeaderView: View {
             
             HStack{
                 Spacer()
-                Text("Right")
+                // Help icon with palette rendering
+                Image(systemName: "questionmark.circle")
+                    .symbolRenderingMode(.palette)
+                    .foregroundStyle(.red, .blue)
+                    .font(.largeTitle)
+//                    .padding(.trailing)
             }
             .padding(.horizontal)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
