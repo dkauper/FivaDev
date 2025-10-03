@@ -4,7 +4,7 @@
 //
 //  Simplified with center-body unified tooltip system
 //  Created by Doron Kauper on 9/21/25.
-//  Updated: October 2, 2025, 11:35 AM PDT
+//  Optimized: October 3, 2025, 2:45 PM Pacific - Cached layout config, removed Task wrappers
 //
 
 import SwiftUI
@@ -21,18 +21,9 @@ struct DiscardOverlayView: View {
     @State private var touchedElements: Set<DiscardElementType> = []
     @State private var showTooltipFor: DiscardElementType? = nil
     
-    // Get unified configuration for current device/orientation
-    private var overlayConfig: DiscardOverlayConfiguration {
-        DiscardOverlayConfiguration.current(
-            for: DeviceType.current,
-            orientation: orientation
-        )
-    }
-    
-    // Get tooltip style for current device
-    private var tooltipStyle: TooltipStyle {
-        UnifiedTooltipConfiguration.style(for: DeviceType.current)
-    }
+    // OPTIMIZED: Cached configuration to avoid repeated computation
+    @State private var overlayConfig: DiscardOverlayConfiguration
+    @State private var tooltipStyle: TooltipStyle
     
     // Determine if overlay is laid out horizontally or vertically
     private var isHorizontalLayout: Bool {
@@ -40,6 +31,21 @@ struct DiscardOverlayView: View {
         let overlayWidth = position.overlayWidth(bodyWidth)
         let overlayHeight = position.overlayHeight(bodyHeight)
         return overlayWidth > overlayHeight
+    }
+    
+    // OPTIMIZED: Initialize cached configuration once
+    init(bodyWidth: CGFloat, bodyHeight: CGFloat, layoutConstants: GlobalLayoutConstants, orientation: AppOrientation) {
+        self.bodyWidth = bodyWidth
+        self.bodyHeight = bodyHeight
+        self.layoutConstants = layoutConstants
+        self.orientation = orientation
+        
+        // Initialize cached configuration
+        _overlayConfig = State(initialValue: DiscardOverlayConfiguration.current(
+            for: DeviceType.current,
+            orientation: orientation
+        ))
+        _tooltipStyle = State(initialValue: UnifiedTooltipConfiguration.style(for: DeviceType.current))
     }
     
     var body: some View {
@@ -84,6 +90,13 @@ struct DiscardOverlayView: View {
             }
         }
         .frame(width: bodyWidth, height: bodyHeight)
+        // OPTIMIZED: Update cached configuration only when orientation changes
+        .onChange(of: orientation) { _, newOrientation in
+            overlayConfig = DiscardOverlayConfiguration.current(
+                for: DeviceType.current,
+                orientation: newOrientation
+            )
+        }
     }
     
     private func discardOverlay(width: CGFloat, height: CGFloat) -> some View {
@@ -246,9 +259,8 @@ struct DiscardOverlayView: View {
             }
             
             if let cardName = cardName {
-                Task { @MainActor in
-                    gameStateManager.highlightCard(cardName, highlight: isHovering)
-                }
+                // OPTIMIZED: Direct call - GameStateManager is already @MainActor
+                gameStateManager.highlightCard(cardName, highlight: isHovering)
             }
         }
         .simultaneousGesture(
@@ -257,18 +269,16 @@ struct DiscardOverlayView: View {
                     if !touchedElements.contains(elementType) {
                         touchedElements.insert(elementType)
                         if let cardName = cardName {
-                            Task { @MainActor in
-                                gameStateManager.highlightCard(cardName, highlight: true)
-                            }
+                            // OPTIMIZED: Direct call - GameStateManager is already @MainActor
+                            gameStateManager.highlightCard(cardName, highlight: true)
                         }
                     }
                 }
                 .onEnded { _ in
                     touchedElements.remove(elementType)
                     if let cardName = cardName {
-                        Task { @MainActor in
-                            gameStateManager.highlightCard(cardName, highlight: false)
-                        }
+                        // OPTIMIZED: Direct call - GameStateManager is already @MainActor
+                        gameStateManager.highlightCard(cardName, highlight: false)
                     }
                 }
         )
@@ -280,9 +290,8 @@ struct DiscardOverlayView: View {
                 hoveredElements.remove(elementType)
             }
             if let cardName = cardName {
-                Task { @MainActor in
-                    gameStateManager.highlightCard(cardName, highlight: isFocused)
-                }
+                // OPTIMIZED: Direct call - GameStateManager is already @MainActor
+                gameStateManager.highlightCard(cardName, highlight: isFocused)
             }
         }
         #endif

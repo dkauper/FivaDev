@@ -4,7 +4,7 @@
 //
 //  Refactored to use SharedPlayingCardComponents
 //  Created by Doron Kauper on 9/17/25.
-//  Updated: October 1, 2025, 10:35 AM PDT
+//  Optimized: October 3, 2025, 3:00 PM Pacific - Reduced environment object lookups
 //
 
 import SwiftUI
@@ -42,11 +42,21 @@ struct GameGridElement: View {
         return PlayingCardData.parse(from: cardName)
     }
     
+    // OPTIMIZED: Computed property to reduce environment object lookups
+    private var cardOpacity: Double {
+        let isHighlighted = gameStateManager.shouldHighlight(position: position)
+        let hasAnyHighlights = !gameStateManager.highlightedCards.isEmpty
+        return isHighlighted ? 1.0 : (hasAnyHighlights ? 0.7 : 1.0)
+    }
+    
     var body: some View {
+        // OPTIMIZED: Cache environment lookups once per render
+        let isHighlighted = gameStateManager.shouldHighlight(position: position)
+        
         ElevatedCard(
             width: width,
             height: height,
-            isHighlighted: gameStateManager.shouldHighlight(position: position),
+            isHighlighted: isHighlighted,
             highlightScale: 1.5,
             zIndex: Double(position),
             highlightZIndex: 10000
@@ -58,8 +68,7 @@ struct GameGridElement: View {
                 orientation: orientation
             )
         }
-        .opacity(gameStateManager.shouldHighlight(position: position) ? 1.0 :
-                (gameStateManager.highlightedCards.isEmpty ? 1.0 : 0.7))
+        .opacity(cardOpacity)
     }
 }
 

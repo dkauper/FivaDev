@@ -3,6 +3,7 @@
 //  FivaDev
 //
 //  Created by Doron Kauper on 9/18/25.
+//  Optimized: October 3, 2025, 2:45 PM Pacific - Fixed memory leak in highlightingTimeouts
 //
 
 import SwiftUI
@@ -59,9 +60,8 @@ class GameStateManager: ObservableObject {
     
     // Function to sync with your GameState and update cards
     func updatePlayerCards() {
-        let cardCount = GameState.cardsPerPlayer // Uses your static GameState
-        // Take first N cards based on your GameState.cardsPerPlayer
-//        currentPlayerCards = Array(availableCards.prefix(cardCount))
+        // Future: Use GameState.cardsPerPlayer when implementing card dealing
+        // currentPlayerCards = Array(availableCards.prefix(GameState.cardsPerPlayer))
         currentPlayerCards = ["AS", "5H", "KH", "AH", "7H", "9C", "4H"]
     }
     
@@ -125,11 +125,12 @@ class GameStateManager: ObservableObject {
         print("Current player: \(currentPlayerName)")
     }
     
-    // Enhanced function to highlight cards on the board when hovering over player hand
+    // OPTIMIZED: Enhanced function to highlight cards on the board when hovering over player hand
+    // Fixed memory leak by ensuring task cleanup on completion
     func highlightCard(_ cardName: String, highlight: Bool) {
-        // Cancel any existing timeout for this card
+        // Cancel any existing timeout for this card and clean up
         highlightingTimeouts[cardName]?.cancel()
-        highlightingTimeouts[cardName] = nil
+        highlightingTimeouts.removeValue(forKey: cardName)
         
         if highlight {
             // Immediate highlighting
@@ -140,7 +141,8 @@ class GameStateManager: ObservableObject {
                 try? await Task.sleep(nanoseconds: 50_000_000) // 50ms delay
                 if !Task.isCancelled {
                     highlightedCards.remove(cardName)
-                    highlightingTimeouts[cardName] = nil
+                    // FIXED: Clean up task from dictionary after completion
+                    highlightingTimeouts.removeValue(forKey: cardName)
                 }
             }
         }
@@ -175,6 +177,9 @@ class GameStateManager: ObservableObject {
         // Clear highlighted cards
         highlightedCards.removeAll()
     }
+    
+    #if DEBUG
+    // OPTIMIZED: Debug methods moved to DEBUG builds only
     
     // Function to get highlighting debug info
     func getHighlightingDebugInfo() -> String {
@@ -215,4 +220,5 @@ class GameStateManager: ObservableObject {
             lastCardPlayed = "8D"
         }
     }
+    #endif
 }

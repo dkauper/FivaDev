@@ -4,7 +4,7 @@
 //
 //  FIXED: Cards now maintain vertical orientation regardless of device rotation
 //  Created by Doron Kauper on 9/17/25.
-//  Revised: September 28, 2025, 4:00 PM PST
+//  Optimized: October 3, 2025, 3:00 PM Pacific - Cached geometry calculation
 //
 
 import SwiftUI
@@ -24,14 +24,30 @@ struct GameGrid: View {
     private let gridPaddingPercent: CGFloat = 0.02    // 2% padding around entire grid
     private let cardSpacingPercent: CGFloat = 0.008   // 0.8% spacing between cards
     
+    // OPTIMIZED: Cache calculated geometry to avoid repeated computation
+    @State private var cachedGeometry: GridGeometry?
+    
     var body: some View {
         ZStack {
             buildPercentageBasedGrid()
         }
+        .onChange(of: width) { _, _ in
+            cachedGeometry = nil
+        }
+        .onChange(of: height) { _, _ in
+            cachedGeometry = nil
+        }
     }
     
     private func buildPercentageBasedGrid() -> some View {
-        let gridGeometry = calculatePercentageBasedGeometry()
+        // OPTIMIZED: Use cached geometry or calculate if needed
+        let gridGeometry = cachedGeometry ?? calculatePercentageBasedGeometry()
+        if cachedGeometry == nil {
+            DispatchQueue.main.async {
+                cachedGeometry = gridGeometry
+            }
+        }
+        
         let columns = Array(repeating: GridItem(.fixed(gridGeometry.cardWidth), spacing: gridGeometry.spacing), count: gridSize)
         
         let grid = LazyVGrid(columns: columns, spacing: gridGeometry.spacing) {
@@ -40,7 +56,7 @@ struct GameGrid: View {
                     position: position,
                     width: gridGeometry.cardWidth,
                     height: gridGeometry.cardHeight,
-                    orientation: orientation // FIXED: Pass device orientation for component percentages
+                    orientation: orientation
                 )
                 .environmentObject(gameStateManager)
             }
@@ -48,16 +64,11 @@ struct GameGrid: View {
         .padding(gridGeometry.gridPadding)
         .frame(width: width, height: height)
         
-        // REMOVED: No longer rotating the entire grid
-        // Cards now maintain their vertical orientation in all device orientations
         return AnyView(grid)
     }
     
     private func calculatePercentageBasedGeometry() -> GridGeometry {
         // Use the GameBoard-provided dimensions directly
-        // These come from GlobalLayoutConstants calculations
-        
-        // FIXED: No need to swap dimensions for landscape since we're not rotating the grid
         let useWidth = width
         let useHeight = height
         
@@ -127,7 +138,7 @@ private struct GridGeometry {
 extension GameGrid {
     /// Provides detailed geometry information for debugging
     private var debugInfo: String {
-        let geometry = calculatePercentageBasedGeometry()
+        let geometry = cachedGeometry ?? calculatePercentageBasedGeometry()
         return """
         GameGrid Debug Info:
         - GameBoard Container: \(String(format: "%.1f", width)) x \(String(format: "%.1f", height))

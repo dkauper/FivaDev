@@ -4,7 +4,7 @@
 //
 //  Enhanced with new layout system compatibility
 //  Created by Doron Kauper on 9/17/25.
-//  Updated: September 22, 2025, 2:50 PM
+//  Optimized: October 3, 2025, 4:35 PM Pacific - Removed unused GeometryProxy parameter
 //
 
 import SwiftUI
@@ -14,7 +14,6 @@ struct BodyView: View {
     let height: CGFloat
     let layoutConstants: GlobalLayoutConstants
     let orientation: AppOrientation
-    let geometry: GeometryProxy
     
     @EnvironmentObject var gameStateManager: GameStateManager
     
@@ -67,8 +66,7 @@ struct BodyView: View {
             width: bodyWidth,
             height: bodyHeight,
             layoutConstants: layoutConstants,
-            orientation: orientation,
-            geometry: geometry
+            orientation: orientation
         )
         .environmentObject(GameStateManager())
     }
@@ -87,8 +85,7 @@ struct BodyView: View {
             width: bodyWidth,
             height: bodyHeight,
             layoutConstants: layoutConstants,
-            orientation: orientation,
-            geometry: geometry
+            orientation: orientation
         )
         .environmentObject(GameStateManager())
     }
@@ -107,8 +104,7 @@ struct BodyView: View {
             width: bodyWidth,
             height: bodyHeight,
             layoutConstants: layoutConstants,
-            orientation: orientation,
-            geometry: geometry
+            orientation: orientation
         )
         .environmentObject(GameStateManager())
     }

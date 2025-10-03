@@ -3,6 +3,7 @@
 //  FivaDev
 //
 //  Created by Doron Kauper on 9/16/25.
+//  Optimized: October 3, 2025, 4:35 PM Pacific - Removed unused geometry parameter
 //
 
 import SwiftUI
@@ -34,8 +35,7 @@ struct ContentView: View {
                     width: bodyWidth,
                     height: bodyHeight,
                     layoutConstants: layoutConstants,
-                    orientation: orientation,
-                    geometry: geometry
+                    orientation: orientation
                 )
                 .frame(width: bodyWidth, height: bodyHeight)
                 .environmentObject(gameStateManager)
