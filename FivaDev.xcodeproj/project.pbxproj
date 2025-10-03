@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		F405AA9D2E79AB1F0013FF04 /* CLAUDE.md in Resources */ = {isa = PBXBuildFile; fileRef = F405AA9B2E79AB1F0013FF04 /* CLAUDE.md */; };
 		F405AA9F2E79AB1F0013FF04 /* 📈Recent Development Progress.md in Resources */ = {isa = PBXBuildFile; fileRef = F405AA9A2E79AB1F0013FF04 /* 📈Recent Development Progress.md */; };
+		F4463FA22E8ED9D700C9F8ED /* Fiva Game Instructions.md in Resources */ = {isa = PBXBuildFile; fileRef = F4463FA12E8ED9D700C9F8ED /* Fiva Game Instructions.md */; };
 		F4E2203B2E8896CA00C4E3AD /* Playing cards game board distribution.md in Resources */ = {isa = PBXBuildFile; fileRef = F4E2203A2E8896CA00C4E3AD /* Playing cards game board distribution.md */; };
 		F4E2203C2E8896CA00C4E3AD /* Playing Card Components.md in Resources */ = {isa = PBXBuildFile; fileRef = F4E220392E8896CA00C4E3AD /* Playing Card Components.md */; };
 /* End PBXBuildFile section */
@@ -17,6 +18,7 @@
 		F405AA882E79985D0013FF04 /* FivaDev.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FivaDev.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F405AA9A2E79AB1F0013FF04 /* 📈Recent Development Progress.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; name = "📈Recent Development Progress.md"; path = "/Users/dkauper/Library/Mobile Documents/iCloud~md~obsidian/Documents/Home/Development/📈Recent Development Progress.md"; sourceTree = "<absolute>"; };
 		F405AA9B2E79AB1F0013FF04 /* CLAUDE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; name = CLAUDE.md; path = "/Users/dkauper/Library/Mobile Documents/iCloud~md~obsidian/Documents/Home/Development/CLAUDE.md"; sourceTree = "<absolute>"; };
+		F4463FA12E8ED9D700C9F8ED /* Fiva Game Instructions.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; name = "Fiva Game Instructions.md"; path = "/Users/dkauper/Library/Mobile Documents/iCloud~md~obsidian/Documents/Home/Development/Fiva Game Instructions.md"; sourceTree = "<absolute>"; };
 		F4E220392E8896CA00C4E3AD /* Playing Card Components.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; name = "Playing Card Components.md"; path = "/Users/dkauper/Library/Mobile Documents/iCloud~md~obsidian/Documents/Home/Development/Playing Card Components.md"; sourceTree = "<absolute>"; };
 		F4E2203A2E8896CA00C4E3AD /* Playing cards game board distribution.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; name = "Playing cards game board distribution.md"; path = "/Users/dkauper/Library/Mobile Documents/iCloud~md~obsidian/Documents/Home/Development/Playing cards game board distribution.md"; sourceTree = "<absolute>"; };
 /* End PBXFileReference section */
@@ -43,6 +45,7 @@
 		F405AA7F2E79985D0013FF04 = {
 			isa = PBXGroup;
 			children = (
+				F4463FA12E8ED9D700C9F8ED /* Fiva Game Instructions.md */,
 				F4E220392E8896CA00C4E3AD /* Playing Card Components.md */,
 				F4E2203A2E8896CA00C4E3AD /* Playing cards game board distribution.md */,
 				F405AA9A2E79AB1F0013FF04 /* 📈Recent Development Progress.md */,
@@ -125,6 +128,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				F405AA9D2E79AB1F0013FF04 /* CLAUDE.md in Resources */,
+				F4463FA22E8ED9D700C9F8ED /* Fiva Game Instructions.md in Resources */,
 				F4E2203B2E8896CA00C4E3AD /* Playing cards game board distribution.md in Resources */,
 				F4E2203C2E8896CA00C4E3AD /* Playing Card Components.md in Resources */,
 				F405AA9F2E79AB1F0013FF04 /* 📈Recent Development Progress.md in Resources */,

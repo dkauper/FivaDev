@@ -330,8 +330,8 @@ struct DiscardOverlayConfiguration {
     private static func iPadLandscapeConfiguration() -> DiscardOverlayConfiguration {
         return DiscardOverlayConfiguration(
             overlayPosition: OverlayPosition(
-                topPadding: 0.07,       // 7% padding from top of BodyView
-                bottomPadding: 0.07,    // 7% padding from bottom of BodyView
+                topPadding: 0.09,       // 7% padding from top of BodyView
+                bottomPadding: 0.09,    // 7% padding from bottom of BodyView
                 leftPadding: 0.02,      // 1% padding from left side of BodyView
                 rightPadding: 0.92      // 92% padding from right side of BodyView
             ),

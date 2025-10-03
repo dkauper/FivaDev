@@ -434,7 +434,7 @@ struct GlobalLayoutConstants {
         return GlobalLayoutConstants(
             deviceLength: 0, // Will be set dynamically
             deviceWidth: 0,  // Will be set dynamically
-            headerHeight: 0.08,          // 8% of device length
+            headerHeight: 0.05,          // 8% of device length
             headerWidth: 1.0,            // 100% of device width
             bodyHeight: 0.92,            // Calculated: device height minus header height
             bodyWidth: 1.0,              // 100% of device width

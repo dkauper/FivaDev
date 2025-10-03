@@ -61,7 +61,8 @@ class GameStateManager: ObservableObject {
     func updatePlayerCards() {
         let cardCount = GameState.cardsPerPlayer // Uses your static GameState
         // Take first N cards based on your GameState.cardsPerPlayer
-        currentPlayerCards = Array(availableCards.prefix(cardCount))
+//        currentPlayerCards = Array(availableCards.prefix(cardCount))
+        currentPlayerCards = ["AS", "5H", "KH", "AH", "7H", "9C", "4H"]
     }
     
     // Setup initial game state for testing purposes

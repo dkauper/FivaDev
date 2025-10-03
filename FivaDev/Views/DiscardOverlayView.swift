@@ -2,9 +2,9 @@
 //  DiscardOverlayView.swift
 //  FivaDev
 //
-//  Revised with grid orientation logic matching PlayerHandView
+//  Simplified with center-body unified tooltip system
 //  Created by Doron Kauper on 9/21/25.
-//  Updated: September 29, 2025, 11:55 AM PDT
+//  Updated: October 2, 2025, 11:35 AM PDT
 //
 
 import SwiftUI
@@ -19,6 +19,7 @@ struct DiscardOverlayView: View {
     @EnvironmentObject var gameStateManager: GameStateManager
     @State private var hoveredElements: Set<DiscardElementType> = []
     @State private var touchedElements: Set<DiscardElementType> = []
+    @State private var showTooltipFor: DiscardElementType? = nil
     
     // Get unified configuration for current device/orientation
     private var overlayConfig: DiscardOverlayConfiguration {
@@ -26,6 +27,19 @@ struct DiscardOverlayView: View {
             for: DeviceType.current,
             orientation: orientation
         )
+    }
+    
+    // Get tooltip style for current device
+    private var tooltipStyle: TooltipStyle {
+        UnifiedTooltipConfiguration.style(for: DeviceType.current)
+    }
+    
+    // Determine if overlay is laid out horizontally or vertically
+    private var isHorizontalLayout: Bool {
+        let position = overlayConfig.overlayPosition
+        let overlayWidth = position.overlayWidth(bodyWidth)
+        let overlayHeight = position.overlayHeight(bodyHeight)
+        return overlayWidth > overlayHeight
     }
     
     var body: some View {
@@ -38,18 +52,36 @@ struct DiscardOverlayView: View {
         let overlayWidth = position.overlayWidth(bodyWidth)
         let overlayHeight = position.overlayHeight(bodyHeight)
         
-        VStack(spacing: 0) {
-            Spacer().frame(height: topPadding)
-            
-            HStack(spacing: 0) {
-                Spacer().frame(width: leftPadding)
+        ZStack {
+            // Main overlay content
+            VStack(spacing: 0) {
+                Spacer().frame(height: topPadding)
                 
-                discardOverlay(width: overlayWidth, height: overlayHeight)
+                HStack(spacing: 0) {
+                    Spacer().frame(width: leftPadding)
+                    
+                    discardOverlay(width: overlayWidth, height: overlayHeight)
+                    
+                    Spacer().frame(width: rightPadding)
+                }
                 
-                Spacer().frame(width: rightPadding)
+                Spacer().frame(height: bottomPadding)
             }
             
-            Spacer().frame(height: bottomPadding)
+            // Simplified center-body tooltip layer
+            if let elementType = showTooltipFor {
+                let content = UnifiedTooltipConfiguration.content(for: elementType)
+                
+                CenterTooltipView(
+                    content: content,
+                    style: tooltipStyle,
+                    bodyWidth: bodyWidth,
+                    bodyHeight: bodyHeight,
+                    isVisible: true
+                )
+                .allowsHitTesting(false)
+                .zIndex(2000)
+            }
         }
         .frame(width: bodyWidth, height: bodyHeight)
     }
@@ -81,15 +113,10 @@ struct DiscardOverlayView: View {
     private func elementsGrid(availableWidth: CGFloat, availableHeight: CGFloat) -> some View {
         let elements = sortedVisibleElements()
         let elementCount = CGFloat(elements.count)
-        let spacing: CGFloat = min(availableWidth, availableHeight) * 0.02 // 2% spacing
+        let spacing: CGFloat = min(availableWidth, availableHeight) * 0.02
         
-        // Determine layout direction based on overlay dimensions
-        // When width > height: horizontal layout (elements in a row)
-        // When height > width: vertical layout (elements in a column)
-        let useHorizontalLayout = availableWidth > availableHeight
-        
-        if useHorizontalLayout {
-            // HORIZONTAL LAYOUT: Elements flow left to right
+        if isHorizontalLayout {
+            // HORIZONTAL LAYOUT
             let totalSpacing = spacing * (elementCount - 1)
             let availableElementWidth = availableWidth - totalSpacing
             let availableElementHeight = availableHeight
@@ -99,13 +126,14 @@ struct DiscardOverlayView: View {
             
             return AnyView(
                 HStack(spacing: spacing) {
-                    ForEach(elements, id: \.self) { elementType in
+                    ForEach(Array(elements.enumerated()), id: \.element) { index, elementType in
                         if let layout = overlayConfig.elements[elementType] {
                             elementView(
                                 type: elementType,
                                 layout: layout,
                                 width: elementWidth,
-                                height: elementHeight
+                                height: elementHeight,
+                                index: index
                             )
                         }
                     }
@@ -113,7 +141,7 @@ struct DiscardOverlayView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             )
         } else {
-            // VERTICAL LAYOUT: Elements stack top to bottom
+            // VERTICAL LAYOUT
             let totalSpacing = spacing * (elementCount - 1)
             let availableElementHeight = availableHeight - totalSpacing
             let availableElementWidth = availableWidth
@@ -123,13 +151,14 @@ struct DiscardOverlayView: View {
             
             return AnyView(
                 VStack(spacing: spacing) {
-                    ForEach(elements, id: \.self) { elementType in
+                    ForEach(Array(elements.enumerated()), id: \.element) { index, elementType in
                         if let layout = overlayConfig.elements[elementType] {
                             elementView(
                                 type: elementType,
                                 layout: layout,
                                 width: elementWidth,
-                                height: elementHeight
+                                height: elementHeight,
+                                index: index
                             )
                         }
                     }
@@ -150,7 +179,8 @@ struct DiscardOverlayView: View {
         type: DiscardElementType,
         layout: DiscardElementLayout,
         width: CGFloat,
-        height: CGFloat
+        height: CGFloat,
+        index: Int
     ) -> some View {
         Group {
             switch type {
@@ -162,33 +192,13 @@ struct DiscardOverlayView: View {
                     layout: layout,
                     elementType: type
                 )
-            case .lastPlayer:
+            case .lastPlayer, .nextPlayer, .score, .timer:
                 sfSymbolElement(
                     elementType: type,
                     width: width,
                     height: height,
-                    layout: layout
-                )
-            case .nextPlayer:
-                sfSymbolElement(
-                    elementType: type,
-                    width: width,
-                    height: height,
-                    layout: layout
-                )
-            case .score:
-                sfSymbolElement(
-                    elementType: type,
-                    width: width,
-                    height: height,
-                    layout: layout
-                )
-            case .timer:
-                sfSymbolElement(
-                    elementType: type,
-                    width: width,
-                    height: height,
-                    layout: layout
+                    layout: layout,
+                    index: index
                 )
             }
         }
@@ -203,18 +213,22 @@ struct DiscardOverlayView: View {
         elementType: DiscardElementType
     ) -> some View {
         let isActive = hoveredElements.contains(elementType) || touchedElements.contains(elementType)
+        let cardData = cardName.map { PlayingCardData.parse(from: $0) }
         
         return ZStack {
             RoundedRectangle(cornerRadius: 4)
-                .fill(Color.white.opacity(0.3))
+                .fill(Color.white.opacity(0.1))
                 .stroke(Color.green.opacity(1), lineWidth: 2)
             
-            if let cardName = cardName {
-                Image(cardName)
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .clipShape(RoundedRectangle(cornerRadius: 3))
-                    .padding(1)
+            if let cardData = cardData {
+                UnifiedPlayingCardView(
+                    cardData: cardData,
+                    width: width - 2,
+                    height: height - 2,
+                    orientation: .portrait,
+                    cardPadding: 1
+                )
+                .padding(1)
             } else {
                 placeholderContent(label: "Discard")
             }
@@ -223,6 +237,7 @@ struct DiscardOverlayView: View {
         .glassEffect()
         .scaleEffect(isActive ? 1.1 : 1.0)
         .animation(.easeInOut(duration: 0.2), value: isActive)
+        #if !os(tvOS)
         .onHover { isHovering in
             if isHovering {
                 hoveredElements.insert(elementType)
@@ -236,14 +251,58 @@ struct DiscardOverlayView: View {
                 }
             }
         }
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { _ in
+                    if !touchedElements.contains(elementType) {
+                        touchedElements.insert(elementType)
+                        if let cardName = cardName {
+                            Task { @MainActor in
+                                gameStateManager.highlightCard(cardName, highlight: true)
+                            }
+                        }
+                    }
+                }
+                .onEnded { _ in
+                    touchedElements.remove(elementType)
+                    if let cardName = cardName {
+                        Task { @MainActor in
+                            gameStateManager.highlightCard(cardName, highlight: false)
+                        }
+                    }
+                }
+        )
+        #else
+        .focusable(true) { isFocused in
+            if isFocused {
+                hoveredElements.insert(elementType)
+            } else {
+                hoveredElements.remove(elementType)
+            }
+            if let cardName = cardName {
+                Task { @MainActor in
+                    gameStateManager.highlightCard(cardName, highlight: isFocused)
+                }
+            }
+        }
+        #endif
+        .onChange(of: isActive) { _, newValue in
+            #if canImport(UIKit) && !os(tvOS)
+            if newValue {
+                let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+                impactFeedback.impactOccurred()
+            }
+            #endif
+        }
     }
     
-    // MARK: - SF Symbol Element with Palette Rendering
+    // MARK: - SF Symbol Element
     private func sfSymbolElement(
         elementType: DiscardElementType,
         width: CGFloat,
         height: CGFloat,
-        layout: DiscardElementLayout
+        layout: DiscardElementLayout,
+        index: Int
     ) -> some View {
         let isActive = hoveredElements.contains(elementType) || touchedElements.contains(elementType)
         
@@ -252,7 +311,6 @@ struct DiscardOverlayView: View {
                 .fill(Color.white.opacity(0.1))
                 .stroke(Color.green.opacity(0.8), lineWidth: 2)
             
-            // Render SF Symbol based on content type
             if case .sfSymbol(let symbolName, let rendering) = layout.contentType {
                 switch rendering {
                 case .palette(let primary, let secondary, let tertiary):
@@ -272,7 +330,6 @@ struct DiscardOverlayView: View {
                         .padding(width * 0.15)
                 }
             } else {
-                // Fallback for non-SF symbol content
                 Text(elementType.displayName)
                     .font(.caption2)
                     .foregroundColor(.primary)
@@ -282,13 +339,62 @@ struct DiscardOverlayView: View {
         .glassEffect()
         .scaleEffect(isActive ? 1.1 : 1.0)
         .animation(.easeInOut(duration: 0.2), value: isActive)
-        .help(elementType.tooltip) // Tooltip for macOS
+        #if os(macOS)
+        .help(UnifiedTooltipConfiguration.content(for: elementType).description)
+        #endif
+        #if !os(tvOS)
         .onHover { isHovering in
             if isHovering {
                 hoveredElements.insert(elementType)
+                #if !os(macOS)
+                showTooltipFor = elementType
+                #endif
             } else {
                 hoveredElements.remove(elementType)
+                if showTooltipFor == elementType {
+                    showTooltipFor = nil
+                }
             }
+        }
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { _ in
+                    if !touchedElements.contains(elementType) {
+                        touchedElements.insert(elementType)
+                        #if canImport(UIKit)
+                        showTooltipFor = elementType
+                        #endif
+                    }
+                }
+                .onEnded { _ in
+                    touchedElements.remove(elementType)
+                    #if canImport(UIKit)
+                    if showTooltipFor == elementType {
+                        showTooltipFor = nil
+                    }
+                    #endif
+                }
+        )
+        #else
+        .focusable(true) { isFocused in
+            if isFocused {
+                hoveredElements.insert(elementType)
+                showTooltipFor = elementType
+            } else {
+                hoveredElements.remove(elementType)
+                if showTooltipFor == elementType {
+                    showTooltipFor = nil
+                }
+            }
+        }
+        #endif
+        .onChange(of: isActive) { _, newValue in
+            #if canImport(UIKit) && !os(tvOS)
+            if newValue {
+                let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+                impactFeedback.impactOccurred()
+            }
+            #endif
         }
     }
     
