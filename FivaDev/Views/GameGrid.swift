@@ -4,6 +4,7 @@
 //
 //  FIXED: Cards now maintain vertical orientation regardless of device rotation
 //  Created by Doron Kauper on 9/17/25.
+//  Updated: October 5, 2025, 2:00 PM Pacific - Added reactivity for board layout changes
 //  Optimized: October 3, 2025, 3:00 PM Pacific - Cached geometry calculation
 //
 
@@ -31,11 +32,15 @@ struct GameGrid: View {
         ZStack {
             buildPercentageBasedGrid()
         }
+        .id(gameStateManager.currentLayoutType) // Force rebuild when layout changes
         .onChange(of: width) { _, _ in
             cachedGeometry = nil
         }
         .onChange(of: height) { _, _ in
             cachedGeometry = nil
+        }
+        .onChange(of: gameStateManager.currentLayoutType) { _, newType in
+            cachedGeometry = nil // Clear cache when layout changes
         }
     }
     
@@ -58,6 +63,7 @@ struct GameGrid: View {
                     height: gridGeometry.cardHeight,
                     orientation: orientation
                 )
+                .id("\(position)-\(gameStateManager.currentLayoutType.rawValue)") // Force unique ID per layout
                 .environmentObject(gameStateManager)
             }
         }

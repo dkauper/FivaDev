@@ -4,6 +4,8 @@
 //
 //  Enhanced with new layout system compatibility
 //  Created by Doron Kauper on 9/17/25.
+//  Updated: October 5, 2025, 2:30 PM Pacific - Digital-optimized layout now default
+//  Updated: October 5, 2025, 1:50 PM Pacific - Added TestControlsView for board layout toggle
 //  Optimized: October 3, 2025, 4:35 PM Pacific - Removed unused GeometryProxy parameter
 //
 
@@ -48,6 +50,14 @@ struct BodyView: View {
                 orientation: orientation
             )
             .environmentObject(gameStateManager)
+            
+            // Development Controls (disabled - digital-optimized layout now default)
+            // Uncomment to re-enable layout toggle for testing:
+//             VStack {
+//                 TestControlsView()
+//                     .environmentObject(gameStateManager)
+//                 Spacer()
+//             }
         }
         .frame(width: width, height: height)
     }

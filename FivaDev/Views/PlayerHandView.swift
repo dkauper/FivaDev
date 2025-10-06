@@ -2,8 +2,9 @@
 //  PlayerHandView.swift
 //  FivaDev
 //
-//  Refactored to use SharedPlayingCardComponents
+//  Fixed: Layout constants now update on first render
 //  Created by Doron Kauper on 9/18/25.
+//  Updated: October 6, 2025, 10:15 PM Pacific - Fixed initial layout calculation
 //  Optimized: October 3, 2025, 4:45 PM Pacific - Added dimension validation
 //
 
@@ -18,27 +19,24 @@ struct PlayerHandView: View {
     @EnvironmentObject var gameStateManager: GameStateManager
     @State private var hoveredCardIndex: Int? = nil
     @State private var touchedCardIndex: Int? = nil
-    @State private var playerHandConstants: PlayerHandLayoutConstants
-    @State private var cardLayoutConstants: PlayerHandCardLayoutConstants
+    
+    // FIXED: Computed properties instead of @State - ensures fresh calculation on every render
+    private var playerHandConstants: PlayerHandLayoutConstants {
+        PlayerHandLayoutConstants.current(
+            for: DeviceType.current,
+            orientation: orientation
+        )
+    }
+    
+    private var cardLayoutConstants: PlayerHandCardLayoutConstants {
+        PlayerHandCardLayoutConstants.current(
+            for: DeviceType.current,
+            orientation: orientation
+        )
+    }
     
     private var playerCards: [String] {
         return gameStateManager.currentPlayerCards
-    }
-    
-    init(bodyWidth: CGFloat, bodyHeight: CGFloat, layoutConstants: GlobalLayoutConstants, orientation: AppOrientation) {
-        self.bodyWidth = bodyWidth
-        self.bodyHeight = bodyHeight
-        self.layoutConstants = layoutConstants
-        self.orientation = orientation
-        
-        _playerHandConstants = State(initialValue: PlayerHandLayoutConstants.current(
-            for: DeviceType.current,
-            orientation: orientation
-        ))
-        _cardLayoutConstants = State(initialValue: PlayerHandCardLayoutConstants.current(
-            for: DeviceType.current,
-            orientation: orientation
-        ))
     }
     
     // Helper to ensure valid dimensions
@@ -68,16 +66,6 @@ struct PlayerHandView: View {
             Spacer().frame(height: validDimension(bottomPadding))
         }
         .frame(width: bodyWidth, height: bodyHeight)
-        .onChange(of: orientation) { _, newOrientation in
-            playerHandConstants = PlayerHandLayoutConstants.current(
-                for: DeviceType.current,
-                orientation: newOrientation
-            )
-            cardLayoutConstants = PlayerHandCardLayoutConstants.current(
-                for: DeviceType.current,
-                orientation: newOrientation
-            )
-        }
     }
     
     private func playerHandOverlay(width: CGFloat, height: CGFloat) -> some View {

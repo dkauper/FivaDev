@@ -199,7 +199,7 @@ struct PlayerHandLayoutConstants: OverlayLayoutConstants {
     private static let layoutCache: [DeviceType: [AppOrientation: PlayerHandLayoutConstants]] = [
         .iPhone: [
             .portrait: PlayerHandLayoutConstants(
-                topPadding: 0.89, bottomPadding: 0.0,
+                topPadding: 0.89, bottomPadding: 0.02,
                 leftPadding: 0.02, rightPadding: 0.02
             ),
             .landscape: PlayerHandLayoutConstants(
@@ -209,12 +209,12 @@ struct PlayerHandLayoutConstants: OverlayLayoutConstants {
         ],
         .iPad: [
             .portrait: PlayerHandLayoutConstants(
-                topPadding: 0.1, bottomPadding: 0.1,
-                leftPadding: 0.89, rightPadding: 0.02
+                topPadding: 0.07, bottomPadding: 0.07,
+                leftPadding: 0.88, rightPadding: 0.015
             ),
             .landscape: PlayerHandLayoutConstants(
-                topPadding: 0.07, bottomPadding: 0.07,
-                leftPadding: 0.92, rightPadding: 0.01
+                topPadding: 0.05, bottomPadding: 0.05,
+                leftPadding: 0.915, rightPadding: 0.015
             )
         ],
         .mac: [

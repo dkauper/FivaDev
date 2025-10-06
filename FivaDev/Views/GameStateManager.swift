@@ -3,6 +3,8 @@
 //  FivaDev
 //
 //  Created by Doron Kauper on 9/18/25.
+//  Updated: October 5, 2025, 1:40 PM Pacific - Added board layout toggle support
+//  Updated: October 4, 2025, 11:10 AM Pacific - Integrated DeckManager
 //  Optimized: October 3, 2025, 2:45 PM Pacific - Fixed memory leak in highlightingTimeouts
 //
 
@@ -11,12 +13,36 @@ import Combine
 
 @MainActor
 class GameStateManager: ObservableObject {
+    // MARK: - Board Layout
+    
+    /// Current board layout type (toggle between legacy and digital-optimized)
+    @Published var currentLayoutType: BoardLayoutType = .digitalOptimized {
+        didSet {
+            print("🎲 GameStateManager: Board layout changed to \(currentLayoutType.rawValue)")
+            // Validate the new layout
+            _ = BoardLayouts.validateLayout(currentLayout)
+        }
+    }
+    
+    /// Returns the current board layout based on selected type
+    var currentLayout: [String] {
+        return BoardLayouts.getLayout(currentLayoutType)
+    }
+    
+    // MARK: - Deck Management
+    
+    /// Centralized deck manager for card operations
+    @Published var deckManager = DeckManager()
+    
+    // MARK: - Game State
+    
     @Published var highlightedCards: Set<String> = []
     
-    // Use your existing GameState values but make them reactive
+    /// Current player's hand of cards
     @Published var currentPlayerCards: [String] = [] {
         didSet {
             // Trigger UI update when cards change
+            print("🎴 GameStateManager: Player hand updated - \(currentPlayerCards.count) cards")
         }
     }
     
@@ -28,105 +54,170 @@ class GameStateManager: ObservableObject {
     // Track the current highlighting state to prevent rapid state changes
     private var highlightingTimeouts: [String: Task<Void, Never>] = [:]
     
-    // All possible cards that could be dealt (matching game board distribution)
-    private let availableCards = [
-        "2H", "3H", "4H", "5H", "6H", "7H", "8H", "9H", "10H", "JH", "QH", "KH", "AH",
-        "2D", "3D", "4D", "5D", "6D", "7D", "8D", "9D", "10D", "JD", "QD", "KD", "AD",
-        "2C", "3C", "4C", "5C", "6C", "7C", "8C", "9C", "10C", "JC", "QC", "KC", "AC",
-        "2S", "3S", "4S", "5S", "6S", "7S", "8S", "9S", "10S", "JS", "QS", "KS", "AS"
-    ]
-    
-    // Card distribution that matches the exact board layout
-    private let cardDistribution = [
-        "RedJoker", "6D", "7D", "8D", "9D", "10D", "QD", "KD", "AD", "BlackJoker",
-        "5D", "3H", "2H", "2S", "3S", "4S", "5S", "6S", "7S", "AC",
-        "4D", "4H", "KD", "AD", "AC", "KC", "QC", "10C", "8S", "KC",
-        "3D", "5H", "QD", "QH", "10H", "9H", "8H", "9C", "9S", "QC",
-        "2D", "6H", "10D", "KH", "3H", "2H", "7H", "8C", "10S", "10C",
-        "AS", "7H", "9D", "AH", "4H", "5H", "6H", "7C", "QS", "9C",
-        "KS", "8H", "8D", "2C", "3C", "4C", "5C", "6C", "KS", "8C",
-        "QS", "9H", "7D", "6D", "5D", "4D", "3D", "2D", "AS", "7C",
-        "10S", "10H", "QH", "KH", "AH", "2C", "3C", "4C", "5C", "6C",
-        "BlackJoker", "9S", "8S", "7S", "6S", "5S", "4S", "3S", "2S", "RedJoker"
-    ]
-    
     // Player names array for easy access
     private let playerNames = ["Player 1", "Player 2", "Player 3", "Player 4"]
     
+    // MARK: - Initialization
+    
     init() {
-        updatePlayerCards()
+        // Initialize deck and deal cards
+        startNewGame()
+    }
+    
+    // MARK: - Game Setup
+    
+    /// Starts a new game by shuffling deck and dealing cards
+    func startNewGame() {
+        print("🎮 GameStateManager: Starting new game...")
+        
+        // Shuffle deck for new game
+        deckManager.shuffleNewGame()
+        
+        // Deal cards to current player
+        dealCardsToCurrentPlayer()
+        
+        // Setup initial game state
         setupInitialGameState()
+        
+        print("✅ GameStateManager: New game ready!")
     }
     
-    // Function to sync with your GameState and update cards
-    func updatePlayerCards() {
-        // Future: Use GameState.cardsPerPlayer when implementing card dealing
-        // currentPlayerCards = Array(availableCards.prefix(GameState.cardsPerPlayer))
-        currentPlayerCards = ["AS", "5H", "KH", "AH", "7H", "9C", "4H"]
+    /// Deals initial cards to the current player
+    /// Future: Extend to deal to all players
+    private func dealCardsToCurrentPlayer() {
+        let cardsPerPlayer = GameState.cardsPerPlayer
+        currentPlayerCards = deckManager.drawCards(count: cardsPerPlayer)
+        
+        print("🎴 GameStateManager: Dealt \(currentPlayerCards.count) cards to \(currentPlayerName)")
+        print("   Cards: \(currentPlayerCards)")
     }
     
-    // Setup initial game state for testing purposes
+    /// Setup initial game state for testing purposes
     private func setupInitialGameState() {
         currentPlayerName = playerNames[GameState.currentPlayer]
         
-        // For demo purposes, set some sample cards
-        mostRecentDiscard = "5H"
-        lastCardPlayed = "8D"
+        // Clear demo values - using real deck now
+        mostRecentDiscard = nil
+        lastCardPlayed = nil
     }
     
-    // Function to manually trigger card update (for testing)
-    func refreshCards() {
-        updatePlayerCards()
-    }
+    // MARK: - Card Operations
     
-    // Function to update current player
-    func updateCurrentPlayer() {
-        currentPlayerName = playerNames[GameState.currentPlayer % playerNames.count]
-    }
-    
-    // Function to simulate playing a card
-    func playCard(_ cardName: String) {
-        // Remove card from player's hand
-        if let index = currentPlayerCards.firstIndex(of: cardName) {
-            currentPlayerCards.remove(at: index)
+    /// Plays a card on the board at the specified position
+    /// - Parameters:
+    ///   - cardName: The card being played
+    ///   - position: Board position (0-99)
+    func playCardOnBoard(_ cardName: String, position: Int) {
+        // Validate card is in player's hand
+        guard let cardIndex = currentPlayerCards.firstIndex(of: cardName) else {
+            print("⚠️ GameStateManager: Cannot play \(cardName) - not in hand")
+            return
         }
+        
+        // Remove card from player's hand
+        currentPlayerCards.remove(at: cardIndex)
+        
+        // Mark card as in play on board
+        deckManager.placeOnBoard(cardName)
         
         // Update last card played
         lastCardPlayed = cardName
         
-        // Move current discard to most recent discard
-        if let currentLastCard = lastCardPlayed {
-            mostRecentDiscard = currentLastCard
+        // Draw replacement card
+        if let newCard = deckManager.drawCard() {
+            currentPlayerCards.append(newCard)
+            print("🎴 GameStateManager: Drew replacement card \(newCard)")
+        } else {
+            print("⚠️ GameStateManager: No cards available to draw")
         }
         
         // Advance to next player
-        GameState.currentPlayer = (GameState.currentPlayer + 1) % GameState.numPlayers
-        updateCurrentPlayer()
+        advanceToNextPlayer()
         
-        print("Card played: \(cardName)")
-        print("Current player: \(currentPlayerName)")
+        print("✅ GameStateManager: Played \(cardName) at position \(position)")
     }
     
-    // Function to simulate discarding a card
-    func discardCard(_ cardName: String) {
-        // Remove card from player's hand
-        if let index = currentPlayerCards.firstIndex(of: cardName) {
-            currentPlayerCards.remove(at: index)
+    /// Discards a dead card (both board positions occupied)
+    /// - Parameter cardName: The card to discard
+    func discardDeadCard(_ cardName: String) {
+        // Validate card is in player's hand
+        guard let cardIndex = currentPlayerCards.firstIndex(of: cardName) else {
+            print("⚠️ GameStateManager: Cannot discard \(cardName) - not in hand")
+            return
         }
+        
+        // Remove card from player's hand
+        currentPlayerCards.remove(at: cardIndex)
+        
+        // Add to discard pile
+        deckManager.discard(cardName)
         
         // Update most recent discard
         mostRecentDiscard = cardName
         
-        // Advance to next player
-        GameState.currentPlayer = (GameState.currentPlayer + 1) % GameState.numPlayers
-        updateCurrentPlayer()
+        // Draw replacement card
+        if let newCard = deckManager.drawCard() {
+            currentPlayerCards.append(newCard)
+            print("🎴 GameStateManager: Drew replacement card \(newCard)")
+        } else {
+            print("⚠️ GameStateManager: No cards available to draw")
+        }
         
-        print("Card discarded: \(cardName)")
-        print("Current player: \(currentPlayerName)")
+        // Advance to next player
+        advanceToNextPlayer()
+        
+        print("🗑️ GameStateManager: Discarded dead card \(cardName)")
     }
     
-    // OPTIMIZED: Enhanced function to highlight cards on the board when hovering over player hand
-    // Fixed memory leak by ensuring task cleanup on completion
+    /// Checks if a card is dead (both board positions occupied)
+    /// - Parameter cardName: Card to check
+    /// - Returns: True if both positions are occupied
+    func isDeadCard(_ cardName: String) -> Bool {
+        let positions = getBoardPositions(for: cardName)
+        
+        // Jokers are never dead cards
+        if cardName.contains("Joker") {
+            return false
+        }
+        
+        // Check if all positions for this card are occupied
+        // TODO: Implement board occupation tracking
+        // For now, return false until board state is implemented
+        return false
+    }
+    
+    // MARK: - Player Management
+    
+    /// Advances to the next player
+    private func advanceToNextPlayer() {
+        GameState.currentPlayer = (GameState.currentPlayer + 1) % GameState.numPlayers
+        updateCurrentPlayer()
+    }
+    
+    /// Updates the current player name
+    func updateCurrentPlayer() {
+        currentPlayerName = playerNames[GameState.currentPlayer % playerNames.count]
+        print("👤 GameStateManager: Current player is now \(currentPlayerName)")
+    }
+    
+    // MARK: - Legacy Methods (Deprecated - Use playCardOnBoard/discardDeadCard instead)
+    
+    /// Legacy method - use playCardOnBoard instead
+    @available(*, deprecated, message: "Use playCardOnBoard(_:position:) instead")
+    func playCard(_ cardName: String) {
+        playCardOnBoard(cardName, position: -1)
+    }
+    
+    /// Legacy method - use discardDeadCard instead
+    @available(*, deprecated, message: "Use discardDeadCard(_:) instead")
+    func discardCard(_ cardName: String) {
+        discardDeadCard(cardName)
+    }
+    
+    // MARK: - Card Highlighting
+    
+    /// Highlights or unhighlights cards on the board when hovering over player hand
+    /// Fixed memory leak by ensuring task cleanup on completion
     func highlightCard(_ cardName: String, highlight: Bool) {
         // Cancel any existing timeout for this card and clean up
         highlightingTimeouts[cardName]?.cancel()
@@ -141,17 +232,17 @@ class GameStateManager: ObservableObject {
                 try? await Task.sleep(nanoseconds: 50_000_000) // 50ms delay
                 if !Task.isCancelled {
                     highlightedCards.remove(cardName)
-                    // FIXED: Clean up task from dictionary after completion
+                    // Clean up task from dictionary after completion
                     highlightingTimeouts.removeValue(forKey: cardName)
                 }
             }
         }
     }
     
-    // Function to get all board positions for a specific card
+    /// Gets all board positions for a specific card
     func getBoardPositions(for cardName: String) -> [Int] {
         var positions: [Int] = []
-        for (index, card) in cardDistribution.enumerated() {
+        for (index, card) in currentLayout.enumerated() {
             if card == cardName {
                 positions.append(index)
             }
@@ -159,14 +250,26 @@ class GameStateManager: ObservableObject {
         return positions
     }
     
-    // Enhanced function to check if a board position should be highlighted
+    /// Checks if a board position should be highlighted
     func shouldHighlight(position: Int) -> Bool {
-        guard position >= 0 && position < cardDistribution.count else { return false }
-        let cardAtPosition = cardDistribution[position]
+        guard position >= 0 && position < currentLayout.count else { return false }
+        let cardAtPosition = currentLayout[position]
         return highlightedCards.contains(cardAtPosition)
     }
     
-    // Function to clear all highlights (useful for debugging or resetting state)
+    // MARK: - Board Layout Management
+    
+    /// Toggles between board layouts
+    func toggleBoardLayout() {
+        currentLayoutType = (currentLayoutType == .legacy) ? .digitalOptimized : .legacy
+    }
+    
+    /// Sets a specific board layout
+    func setBoardLayout(_ type: BoardLayoutType) {
+        currentLayoutType = type
+    }
+    
+    /// Clears all card highlights
     func clearAllHighlights() {
         // Cancel all pending timeouts
         for timeout in highlightingTimeouts.values {
@@ -178,10 +281,28 @@ class GameStateManager: ObservableObject {
         highlightedCards.removeAll()
     }
     
-    #if DEBUG
-    // OPTIMIZED: Debug methods moved to DEBUG builds only
+    // MARK: - Debug Methods
     
-    // Function to get highlighting debug info
+    #if DEBUG
+    
+    /// Gets comprehensive game state debug info
+    func getDebugInfo() -> String {
+        return """
+        ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        🎮 GAME STATE DEBUG INFO
+        ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        🎲 Board Layout: \(currentLayoutType.rawValue)
+        👤 Current Player: \(currentPlayerName)
+        🎴 Hand Size: \(currentPlayerCards.count) cards
+        ✨ Highlighted: \(Array(highlightedCards).sorted())
+        🎯 Last Played: \(lastCardPlayed ?? "None")
+        🗑️ Last Discard: \(mostRecentDiscard ?? "None")
+        ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        \(deckManager.getDebugInfo())
+        """
+    }
+    
+    /// Gets highlighting debug info
     func getHighlightingDebugInfo() -> String {
         return """
         Highlighted Cards: \(Array(highlightedCards).sorted())
@@ -193,7 +314,7 @@ class GameStateManager: ObservableObject {
         """
     }
     
-    // Function to test highlighting with specific card
+    /// Tests highlighting with a specific card
     func testHighlight(_ cardName: String) {
         highlightCard(cardName, highlight: true)
         
@@ -204,21 +325,50 @@ class GameStateManager: ObservableObject {
         }
     }
     
-    // Function to reset game state for testing
+    /// Resets entire game state for testing
     func resetGameState() {
+        print("🔄 GameStateManager: Resetting game state...")
+        
         clearAllHighlights()
         GameState.currentPlayer = 0
-        updateCurrentPlayer()
-        updatePlayerCards()
-        mostRecentDiscard = nil
-        lastCardPlayed = nil
         
-        // Set some demo values after a brief delay
-        Task {
-            try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
-            mostRecentDiscard = "5H"
-            lastCardPlayed = "8D"
-        }
+        // Start fresh game
+        startNewGame()
     }
+    
+    /// Simulates a full game turn for testing
+    func simulateGameTurn() {
+        guard let card = currentPlayerCards.first else {
+            print("⚠️ GameStateManager: No cards to play")
+            return
+        }
+        
+        // Simulate playing the first card
+        playCardOnBoard(card, position: 50)
+    }
+    
+    /// Verifies game state integrity
+    func verifyGameIntegrity() -> Bool {
+        let deckIntegrity = deckManager.verifyDeckIntegrity()
+        let handSize = currentPlayerCards.count
+        let expectedHandSize = GameState.cardsPerPlayer
+        
+        let handValid = handSize <= expectedHandSize
+        
+        if deckIntegrity && handValid {
+            print("✅ GameStateManager: Integrity check passed")
+        } else {
+            print("❌ GameStateManager: Integrity check FAILED")
+            if !deckIntegrity {
+                print("   - Deck integrity failed")
+            }
+            if !handValid {
+                print("   - Hand size invalid: \(handSize) (expected ≤ \(expectedHandSize))")
+            }
+        }
+        
+        return deckIntegrity && handValid
+    }
+    
     #endif
 }

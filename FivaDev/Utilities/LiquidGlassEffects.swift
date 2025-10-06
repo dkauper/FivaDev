@@ -350,8 +350,6 @@ struct DiscardOverlayGlassEffect: ViewModifier {
                 return .crystalline
             case (.mac, _):
                 return .holographic
-//            case (.appleTV, _):
-//                return .dramatic
             }
         }()
         

@@ -10,23 +10,54 @@
 		F405AA9D2E79AB1F0013FF04 /* CLAUDE.md in Resources */ = {isa = PBXBuildFile; fileRef = F405AA9B2E79AB1F0013FF04 /* CLAUDE.md */; };
 		F405AA9F2E79AB1F0013FF04 /* 📈Recent Development Progress.md in Resources */ = {isa = PBXBuildFile; fileRef = F405AA9A2E79AB1F0013FF04 /* 📈Recent Development Progress.md */; };
 		F4463FA22E8ED9D700C9F8ED /* Fiva Game Instructions.md in Resources */ = {isa = PBXBuildFile; fileRef = F4463FA12E8ED9D700C9F8ED /* Fiva Game Instructions.md */; };
+		F4463FF22E9181A200C9F8ED /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F4463FF12E9181A200C9F8ED /* XCTest.framework */; platformFilter = ios; };
 		F4E2203B2E8896CA00C4E3AD /* Playing cards game board distribution.md in Resources */ = {isa = PBXBuildFile; fileRef = F4E2203A2E8896CA00C4E3AD /* Playing cards game board distribution.md */; };
 		F4E2203C2E8896CA00C4E3AD /* Playing Card Components.md in Resources */ = {isa = PBXBuildFile; fileRef = F4E220392E8896CA00C4E3AD /* Playing Card Components.md */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		F4463FE52E91801200C9F8ED /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = F405AA802E79985D0013FF04 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = F405AA872E79985D0013FF04;
+			remoteInfo = FivaDev;
+		};
+/* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
 		F405AA882E79985D0013FF04 /* FivaDev.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FivaDev.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F405AA9A2E79AB1F0013FF04 /* 📈Recent Development Progress.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; name = "📈Recent Development Progress.md"; path = "/Users/dkauper/Library/Mobile Documents/iCloud~md~obsidian/Documents/Home/Development/📈Recent Development Progress.md"; sourceTree = "<absolute>"; };
 		F405AA9B2E79AB1F0013FF04 /* CLAUDE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; name = CLAUDE.md; path = "/Users/dkauper/Library/Mobile Documents/iCloud~md~obsidian/Documents/Home/Development/CLAUDE.md"; sourceTree = "<absolute>"; };
 		F4463FA12E8ED9D700C9F8ED /* Fiva Game Instructions.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; name = "Fiva Game Instructions.md"; path = "/Users/dkauper/Library/Mobile Documents/iCloud~md~obsidian/Documents/Home/Development/Fiva Game Instructions.md"; sourceTree = "<absolute>"; };
+		F4463FE12E91801200C9F8ED /* FivaDevTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FivaDevTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		F4463FF12E9181A200C9F8ED /* XCTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = XCTest.framework; path = Platforms/iPhoneOS.platform/Developer/Library/Frameworks/XCTest.framework; sourceTree = DEVELOPER_DIR; };
 		F4E220392E8896CA00C4E3AD /* Playing Card Components.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; name = "Playing Card Components.md"; path = "/Users/dkauper/Library/Mobile Documents/iCloud~md~obsidian/Documents/Home/Development/Playing Card Components.md"; sourceTree = "<absolute>"; };
 		F4E2203A2E8896CA00C4E3AD /* Playing cards game board distribution.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; name = "Playing cards game board distribution.md"; path = "/Users/dkauper/Library/Mobile Documents/iCloud~md~obsidian/Documents/Home/Development/Playing cards game board distribution.md"; sourceTree = "<absolute>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		F4463FFF2E918B2500C9F8ED /* Exceptions for "FivaDevTests" folder in "FivaDevTests" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = F4463FE02E91801200C9F8ED /* FivaDevTests */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		F405AA8A2E79985D0013FF04 /* FivaDev */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = FivaDev;
+			sourceTree = "<group>";
+		};
+		F4463FE22E91801200C9F8ED /* FivaDevTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				F4463FFF2E918B2500C9F8ED /* Exceptions for "FivaDevTests" folder in "FivaDevTests" target */,
+			);
+			path = FivaDevTests;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -36,6 +67,14 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F4463FDE2E91801200C9F8ED /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F4463FF22E9181A200C9F8ED /* XCTest.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -51,6 +90,8 @@
 				F405AA9A2E79AB1F0013FF04 /* 📈Recent Development Progress.md */,
 				F405AA9B2E79AB1F0013FF04 /* CLAUDE.md */,
 				F405AA8A2E79985D0013FF04 /* FivaDev */,
+				F4463FE22E91801200C9F8ED /* FivaDevTests */,
+				F4463FF02E9181A200C9F8ED /* Frameworks */,
 				F405AA892E79985D0013FF04 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -59,8 +100,17 @@
 			isa = PBXGroup;
 			children = (
 				F405AA882E79985D0013FF04 /* FivaDev.app */,
+				F4463FE12E91801200C9F8ED /* FivaDevTests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		F4463FF02E9181A200C9F8ED /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				F4463FF12E9181A200C9F8ED /* XCTest.framework */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -88,6 +138,29 @@
 			productReference = F405AA882E79985D0013FF04 /* FivaDev.app */;
 			productType = "com.apple.product-type.application";
 		};
+		F4463FE02E91801200C9F8ED /* FivaDevTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F4463FE92E91801200C9F8ED /* Build configuration list for PBXNativeTarget "FivaDevTests" */;
+			buildPhases = (
+				F4463FDD2E91801200C9F8ED /* Sources */,
+				F4463FDE2E91801200C9F8ED /* Frameworks */,
+				F4463FDF2E91801200C9F8ED /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				F4463FE62E91801200C9F8ED /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				F4463FE22E91801200C9F8ED /* FivaDevTests */,
+			);
+			name = FivaDevTests;
+			packageProductDependencies = (
+			);
+			productName = FivaDevTests;
+			productReference = F4463FE12E91801200C9F8ED /* FivaDevTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -100,6 +173,10 @@
 				TargetAttributes = {
 					F405AA872E79985D0013FF04 = {
 						CreatedOnToolsVersion = 26.0;
+					};
+					F4463FE02E91801200C9F8ED = {
+						CreatedOnToolsVersion = 26.0.1;
+						TestTargetID = F405AA872E79985D0013FF04;
 					};
 				};
 			};
@@ -118,6 +195,7 @@
 			projectRoot = "";
 			targets = (
 				F405AA872E79985D0013FF04 /* FivaDev */,
+				F4463FE02E91801200C9F8ED /* FivaDevTests */,
 			);
 		};
 /* End PBXProject section */
@@ -135,6 +213,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		F4463FDF2E91801200C9F8ED /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -145,7 +230,22 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		F4463FDD2E91801200C9F8ED /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		F4463FE62E91801200C9F8ED /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = F405AA872E79985D0013FF04 /* FivaDev */;
+			targetProxy = F4463FE52E91801200C9F8ED /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		F405AA932E79985F0013FF04 /* Debug */ = {
@@ -362,6 +462,55 @@
 			};
 			name = Release;
 		};
+		F4463FE72E91801200C9F8ED /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = TYBX4ZL924;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = FivaDevTests/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.wrapsys.FivaDevTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/FivaDev.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/FivaDev";
+			};
+			name = Debug;
+		};
+		F4463FE82E91801200C9F8ED /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = TYBX4ZL924;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = FivaDevTests/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.wrapsys.FivaDevTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/FivaDev.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/FivaDev";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -379,6 +528,15 @@
 			buildConfigurations = (
 				F405AA962E79985F0013FF04 /* Debug */,
 				F405AA972E79985F0013FF04 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		F4463FE92E91801200C9F8ED /* Build configuration list for PBXNativeTarget "FivaDevTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F4463FE72E91801200C9F8ED /* Debug */,
+				F4463FE82E91801200C9F8ED /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
