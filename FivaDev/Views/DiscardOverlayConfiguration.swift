@@ -4,7 +4,7 @@
 //
 //  Revised to match PlayerHandOverlay geometry system with SF Symbol icons
 //  Created by Doron Kauper on 9/22/25.
-//  Updated: September 29, 2025, 11:35 AM PDT
+//  Updated: October 11, 2025, Pacific Time
 //
 
 import SwiftUI
@@ -68,7 +68,7 @@ enum SFSymbolRenderingMode {
 
 // MARK: - Enhanced Element Content Type
 enum ElementContentType {
-    case card // Playing card image
+    case card(placeholder: PlayingCardData?) // Playing card image with optional placeholder
     case sfSymbol(name: String, rendering: SFSymbolRenderingMode)
     case text(content: String)
     case dynamic // Content determined at runtime
@@ -164,7 +164,7 @@ struct DiscardOverlayConfiguration {
                     rightPadding: 0.82,     // 82% from right of overlay (leftmost card)
                     isVisible: true,
                     priority: 1,
-                    contentType: .card
+                    contentType: .card(placeholder: PlayingCardData(suit: .hearts, rank: .king, isJoker: false, jokerColor: nil))
                 ),
                 .lastPlayer: DiscardElementLayout(
                     topPadding: 0.08,       // 8% from top of overlay
@@ -224,7 +224,7 @@ struct DiscardOverlayConfiguration {
                     rightPadding: 0.19,     // 19% from right of overlay
                     isVisible: true,
                     priority: 1,
-                    contentType: .card
+                    contentType: .card(placeholder: PlayingCardData(suit: .hearts, rank: .king, isJoker: false, jokerColor: nil))
                 ),
                 .lastPlayer: DiscardElementLayout(
                     topPadding: 0.215,      // 21.5% from top of overlay
@@ -284,7 +284,7 @@ struct DiscardOverlayConfiguration {
                     rightPadding: 0.0,      // 0% from right of overlay
                     isVisible: true,
                     priority: 1,
-                    contentType: .card
+                    contentType: .card(placeholder: PlayingCardData(suit: .hearts, rank: .king, isJoker: false, jokerColor: nil))
                 ),
                 .lastPlayer: DiscardElementLayout(
                     topPadding: 0.24,       // 24% from top of overlay
@@ -344,7 +344,7 @@ struct DiscardOverlayConfiguration {
                     rightPadding: 0.5,      // 50% from right of overlay
                     isVisible: true,
                     priority: 1,
-                    contentType: .card
+                    contentType: .card(placeholder: PlayingCardData(suit: .hearts, rank: .king, isJoker: false, jokerColor: nil))
                 ),
                 .lastPlayer: DiscardElementLayout(
                     topPadding: 0.05,       // 5% from top of overlay
@@ -404,7 +404,7 @@ struct DiscardOverlayConfiguration {
                     rightPadding: 0.8,      // 80% from right of overlay
                     isVisible: true,
                     priority: 1,
-                    contentType: .card
+                    contentType: .card(placeholder: PlayingCardData(suit: .hearts, rank: .king, isJoker: false, jokerColor: nil))
                 ),
                 .lastPlayer: DiscardElementLayout(
                     topPadding: 0.05,       // 5% from top of overlay

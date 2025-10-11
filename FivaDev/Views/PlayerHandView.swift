@@ -24,7 +24,9 @@ struct PlayerHandView: View {
     private var playerHandConstants: PlayerHandLayoutConstants {
         PlayerHandLayoutConstants.current(
             for: DeviceType.current,
-            orientation: orientation
+            orientation: orientation,
+            bodyHeight: bodyHeight,
+            bodyWidth: bodyWidth
         )
     }
     

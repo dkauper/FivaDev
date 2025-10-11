@@ -4,7 +4,7 @@
 //
 //  Simplified with center-body unified tooltip system
 //  Created by Doron Kauper on 9/21/25.
-//  Optimized: October 3, 2025, 2:45 PM Pacific - Cached layout config, removed Task wrappers
+//  Updated: October 11, 2025, Pacific Time - Added placeholder card support
 //
 
 import SwiftUI
@@ -226,7 +226,16 @@ struct DiscardOverlayView: View {
         elementType: DiscardElementType
     ) -> some View {
         let isActive = hoveredElements.contains(elementType) || touchedElements.contains(elementType)
-        let cardData = cardName.map { PlayingCardData.parse(from: $0) }
+        
+        // Use actual discard if available, otherwise use placeholder from layout
+        let cardData: PlayingCardData? = {
+            if let cardName = cardName {
+                return PlayingCardData.parse(from: cardName)
+            } else if case .card(let placeholder) = layout.contentType {
+                return placeholder
+            }
+            return nil
+        }()
         
         return ZStack {
             RoundedRectangle(cornerRadius: 4)

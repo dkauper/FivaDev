@@ -4,7 +4,7 @@
 //
 //  Enhanced with Player Hand Card Layout Configuration System
 //  Created by Doron Kauper on 9/17/25.
-//  Optimized: October 3, 2025, 3:15 PM Pacific - Dictionary-based constant lookups
+//  Updated: October 10, 2025, 7:01 PM Pacific - Dynamic padding calculations
 //
 
 import SwiftUI
@@ -60,7 +60,7 @@ enum AnchorPosition {
 
 // MARK: - Game State Variables
 struct GameState {
-    static var numPlayers: Int = 2
+    static var numPlayers: Int = 6
     static var numTeams: Int = 2
     static var currentPlayer: Int = 0
     
@@ -89,7 +89,7 @@ protocol OverlayLayoutConstants {
     func leftValue(_ containerWidth: CGFloat) -> CGFloat
     func rightValue(_ containerWidth: CGFloat) -> CGFloat
     
-    static func current(for deviceType: DeviceType, orientation: AppOrientation) -> Self
+    static func current(for deviceType: DeviceType, orientation: AppOrientation, bodyHeight: CGFloat, bodyWidth: CGFloat) -> Self
 }
 
 // MARK: - Player Hand Card Layout Constants
@@ -195,38 +195,132 @@ struct PlayerHandLayoutConstants: OverlayLayoutConstants {
         return bodyHeight - topValue(bodyHeight) - bottomValue(bodyHeight)
     }
     
-    // OPTIMIZED: Pre-computed cache for O(1) lookup
-    private static let layoutCache: [DeviceType: [AppOrientation: PlayerHandLayoutConstants]] = [
+    // OPTIMIZED: Dynamic calculation cache using closures for computed padding values
+    private static let layoutCache: [DeviceType: [AppOrientation: (CGFloat, CGFloat) -> PlayerHandLayoutConstants]] = [
         .iPhone: [
-            .portrait: PlayerHandLayoutConstants(
-                topPadding: 0.89, bottomPadding: 0.02,
-                leftPadding: 0.02, rightPadding: 0.02
-            ),
-            .landscape: PlayerHandLayoutConstants(
-                topPadding: 0.05, bottomPadding: 0.05,
-                leftPadding: 0.92, rightPadding: 0.0
-            )
+            .portrait: { bodyHeight, bodyWidth in
+                let topPadding: CGFloat = 0.89
+                let bottomPadding: CGFloat = 0.02
+                let cardsPerPlayer = CGFloat(GameState.cardsPerPlayer)
+                
+                // Compute left/right padding using formula
+                let computedPadding = returnLeftAndRight(
+                    bodyHeight: bodyHeight,
+                    bodyWidth: bodyWidth,
+                    topPadding: topPadding,
+                    bottomPadding: bottomPadding,
+                    cardsPerPlayer: cardsPerPlayer
+                )
+                
+                return PlayerHandLayoutConstants(
+                    topPadding: topPadding,
+                    bottomPadding: bottomPadding,
+                    leftPadding: computedPadding,
+                    rightPadding: computedPadding
+                )
+            },
+            .landscape: { bodyHeight, bodyWidth in
+                let leftPadding: CGFloat = 0.92
+                let rightPadding: CGFloat = 0.0
+                let cardsPerPlayer = CGFloat(GameState.cardsPerPlayer)
+                
+                // Compute top/bottom padding using formula
+                let computedPadding = returnTopAndBottom(
+                    bodyHeight: bodyHeight,
+                    bodyWidth: bodyWidth,
+                    leftPadding: leftPadding,
+                    rightPadding: rightPadding,
+                    cardsPerPlayer: cardsPerPlayer
+                )
+                
+                return PlayerHandLayoutConstants(
+                    topPadding: computedPadding,
+                    bottomPadding: computedPadding,
+                    leftPadding: leftPadding,
+                    rightPadding: rightPadding
+                )
+            }
         ],
         .iPad: [
-            .portrait: PlayerHandLayoutConstants(
-                topPadding: 0.07, bottomPadding: 0.07,
-                leftPadding: 0.88, rightPadding: 0.015
-            ),
-            .landscape: PlayerHandLayoutConstants(
-                topPadding: 0.05, bottomPadding: 0.05,
-                leftPadding: 0.915, rightPadding: 0.015
-            )
+            .portrait: { bodyHeight, bodyWidth in
+                let leftPadding: CGFloat = 0.88
+                let rightPadding: CGFloat = 0.015
+                let cardsPerPlayer = CGFloat(GameState.cardsPerPlayer)
+                
+                // Compute top/bottom padding using formula
+                let computedPadding = returnTopAndBottom(
+                    bodyHeight: bodyHeight,
+                    bodyWidth: bodyWidth,
+                    leftPadding: leftPadding,
+                    rightPadding: rightPadding,
+                    cardsPerPlayer: cardsPerPlayer
+                )
+                
+                return PlayerHandLayoutConstants(
+                    topPadding: computedPadding,
+                    bottomPadding: computedPadding,
+                    leftPadding: leftPadding,
+                    rightPadding: rightPadding
+                )
+            },
+            .landscape: { bodyHeight, bodyWidth in
+                let leftPadding: CGFloat = 0.915
+                let rightPadding: CGFloat = 0.015
+                let cardsPerPlayer = CGFloat(GameState.cardsPerPlayer)
+                
+                // Compute top/bottom padding using formula
+                let computedPadding = returnTopAndBottom(
+                    bodyHeight: bodyHeight,
+                    bodyWidth: bodyWidth,
+                    leftPadding: leftPadding,
+                    rightPadding: rightPadding,
+                    cardsPerPlayer: cardsPerPlayer
+                )
+                
+                return PlayerHandLayoutConstants(
+                    topPadding: computedPadding,
+                    bottomPadding: computedPadding,
+                    leftPadding: leftPadding,
+                    rightPadding: rightPadding
+                )
+            }
         ],
         .mac: [
-            .landscape: PlayerHandLayoutConstants(
-                topPadding: 0.06, bottomPadding: 0.06,
-                leftPadding: 0.915, rightPadding: 0.02
-            )
+            .landscape: { bodyHeight, bodyWidth in
+                let leftPadding: CGFloat = 0.915
+                let rightPadding: CGFloat = 0.02
+                let cardsPerPlayer = CGFloat(GameState.cardsPerPlayer)
+                
+                // Compute top/bottom padding using formula
+                let computedPadding = returnTopAndBottom(
+                    bodyHeight: bodyHeight,
+                    bodyWidth: bodyWidth,
+                    leftPadding: leftPadding,
+                    rightPadding: rightPadding,
+                    cardsPerPlayer: cardsPerPlayer
+                )
+                
+                return PlayerHandLayoutConstants(
+                    topPadding: computedPadding,
+                    bottomPadding: computedPadding,
+                    leftPadding: leftPadding,
+                    rightPadding: rightPadding
+                )
+            }
         ]
     ]
     
-    static func current(for deviceType: DeviceType, orientation: AppOrientation) -> PlayerHandLayoutConstants {
-        layoutCache[deviceType]?[orientation] ?? layoutCache[.iPhone]![.portrait]!
+    static func current(
+        for deviceType: DeviceType,
+        orientation: AppOrientation,
+        bodyHeight: CGFloat,
+        bodyWidth: CGFloat
+    ) -> PlayerHandLayoutConstants {
+        if let closure = layoutCache[deviceType]?[orientation] {
+            return closure(bodyHeight, bodyWidth)
+        }
+        // Fallback
+        return layoutCache[.iPhone]![.portrait]!(bodyHeight, bodyWidth)
     }
 }
 

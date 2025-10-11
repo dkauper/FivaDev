@@ -16,7 +16,12 @@ struct HeaderView: View {
             
             HStack{
                 // Restart icon with palette rendering
-                Image(systemName: "plus.circle")
+                Image(systemName: "repeat")
+                    .symbolRenderingMode(.palette)
+                    .foregroundStyle(.red, .blue)
+                    .font(.largeTitle)
+                    .padding(.leading, 18)
+                Image(systemName: "speaker.slash")
                     .symbolRenderingMode(.palette)
                     .foregroundStyle(.red, .blue)
                     .font(.largeTitle)
