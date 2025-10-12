@@ -2,25 +2,34 @@
 //  HeaderView.swift
 //  FivaDev
 //
-//  Cross-platform header view with fixed app icon loading
-//  Updated: September 29, 2025, 12:30 PM PDT
+//  Cross-platform header view with game restart functionality
+//  Updated: October 11, 2025, 6:45 PM Pacific
 //
 
 import SwiftUI
 
 struct HeaderView: View {
+    @EnvironmentObject var gameStateManager: GameStateManager
+    
     var body: some View {
         ZStack {
             // Use a subtle material to stand out against the background
             Color.clear.background(.ultraThinMaterial)
             
             HStack{
-                // Restart icon with palette rendering
-                Image(systemName: "repeat")
-                    .symbolRenderingMode(.palette)
-                    .foregroundStyle(.red, .blue)
-                    .font(.largeTitle)
-                    .padding(.leading, 18)
+                // Restart icon with palette rendering - NOW INTERACTIVE
+                Button(action: {
+                    print("🔄 HeaderView: Restart button tapped")
+                    gameStateManager.resetGameState()
+                }) {
+                    Image(systemName: "repeat")
+                        .symbolRenderingMode(.palette)
+                        .foregroundStyle(.red, .blue)
+                        .font(.largeTitle)
+                }
+                .buttonStyle(.plain) // Removes default button styling
+                .padding(.leading, 18)
+                
                 Image(systemName: "speaker.slash")
                     .symbolRenderingMode(.palette)
                     .foregroundStyle(.red, .blue)
@@ -75,6 +84,7 @@ struct HeaderView: View {
 
 #Preview {
     HeaderView()
+        .environmentObject(GameStateManager())
         .frame(height: 80)
         .background(Color(hex: "B7E4CC"))
 //        .background(Color(hex: "ff9300"))

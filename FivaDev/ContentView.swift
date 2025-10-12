@@ -3,6 +3,7 @@
 //  FivaDev
 //
 //  Created by Doron Kauper on 9/16/25.
+//  Updated: October 11, 2025, 6:45 PM Pacific - Added GameStateManager to HeaderView
 //  Optimized: October 3, 2025, 4:35 PM Pacific - Removed unused geometry parameter
 //
 
@@ -27,9 +28,11 @@ struct ContentView: View {
                 .ignoresSafeArea()
             
             VStack(spacing: 0) {
-                // Header Section
+                // Header Section - Now receives GameStateManager for restart functionality
                 HeaderView()
                     .frame(height: headerHeight)
+                    .environmentObject(gameStateManager)
+                
                 // Body Section
                 BodyView(
                     width: bodyWidth,

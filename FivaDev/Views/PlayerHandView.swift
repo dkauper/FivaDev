@@ -137,6 +137,7 @@ struct PlayerHandView: View {
     private func playerCardView(cardName: String, width: CGFloat, height: CGFloat, index: Int) -> some View {
         let isHovered = hoveredCardIndex == index
         let isTouched = touchedCardIndex == index
+        let isSelected = gameStateManager.selectedCardIndex == index
         let isActive = isHovered || isTouched
         let cardData = PlayingCardData.parse(from: cardName)
         
@@ -147,7 +148,7 @@ struct PlayerHandView: View {
         return ZStack {
             RoundedRectangle(cornerRadius: cardLayoutConstants.cardCornerRadius(cardWidth: validWidth))
                 .fill(Color.white.opacity(0.1))
-                .stroke(Color.green.opacity(1), lineWidth: 2)
+                .stroke(isSelected ? Color.yellow : Color.green, lineWidth: isSelected ? 3 : 2)
             
             UnifiedPlayingCardView(
                 cardData: cardData,
@@ -168,11 +169,15 @@ struct PlayerHandView: View {
                 .animation(.easeInOut(duration: 0.2), value: isActive)
         )
         #if !os(tvOS)
+        .onTapGesture {
+            print("🎴 HAND TAP: Card \(cardName) at index \(index)")
+            playCard(at: index)
+        }
         .onHover { isHovering in
             hoveredCardIndex = isHovering ? index : nil
             gameStateManager.highlightCard(cardName, highlight: isHovering)
         }
-        .simultaneousGesture(
+        .gesture(
             DragGesture(minimumDistance: 0)
                 .onChanged { _ in
                     if touchedCardIndex != index {
@@ -190,10 +195,11 @@ struct PlayerHandView: View {
             hoveredCardIndex = isFocused ? index : nil
             gameStateManager.highlightCard(cardName, highlight: isFocused)
         }
-        #endif
         .onTapGesture {
+            print("🎴 HAND TAP: Card \(cardName) at index \(index)")
             playCard(at: index)
         }
+        #endif
         .onChange(of: isActive) { _, newValue in
             #if canImport(UIKit) && !os(tvOS)
             if newValue {
@@ -206,10 +212,11 @@ struct PlayerHandView: View {
     
     private func playCard(at index: Int) {
         let cardName = playerCards[index]
-        print("Playing card: \(cardName) at index \(index)")
+        print("Selecting card: \(cardName) at index \(index)")
         
         withAnimation(.spring(duration: 0.3)) {
-            // Future: Add card playing logic
+            // Select the card - this will highlight valid board positions
+            gameStateManager.selectCard(at: index)
         }
     }
 }

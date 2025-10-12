@@ -135,6 +135,11 @@ struct UnifiedTooltipConfiguration {
                 title: "Last Discard",
                 description: "Most recent card discarded by any player"
             )
+        case .currentPlayerChip:
+            return TooltipContent(
+                title: "Current Player",
+                description: "It's this player's turn to play"
+            )
         case .lastPlayer:
             return TooltipContent(
                 title: "Previous Player",

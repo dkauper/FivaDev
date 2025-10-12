@@ -4,7 +4,7 @@
 //
 //  Simplified with center-body unified tooltip system
 //  Created by Doron Kauper on 9/21/25.
-//  Updated: October 11, 2025, Pacific Time - Added placeholder card support
+//  Updated: October 11, 2025, 6:30 PM Pacific - Added current player chip element
 //
 
 import SwiftUI
@@ -205,6 +205,12 @@ struct DiscardOverlayView: View {
                     layout: layout,
                     elementType: type
                 )
+            case .currentPlayerChip:
+                currentPlayerChipElement(
+                    width: width,
+                    height: height,
+                    elementType: type
+                )
             case .lastPlayer, .nextPlayer, .score, .timer:
                 sfSymbolElement(
                     elementType: type,
@@ -301,6 +307,88 @@ struct DiscardOverlayView: View {
             if let cardName = cardName {
                 // OPTIMIZED: Direct call - GameStateManager is already @MainActor
                 gameStateManager.highlightCard(cardName, highlight: isFocused)
+            }
+        }
+        #endif
+        .onChange(of: isActive) { _, newValue in
+            #if canImport(UIKit) && !os(tvOS)
+            if newValue {
+                let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+                impactFeedback.impactOccurred()
+            }
+            #endif
+        }
+    }
+    
+    // MARK: - Current Player Chip Element
+    private func currentPlayerChipElement(
+        width: CGFloat,
+        height: CGFloat,
+        elementType: DiscardElementType
+    ) -> some View {
+        let isActive = hoveredElements.contains(elementType) || touchedElements.contains(elementType)
+        let currentPlayerColor = gameStateManager.currentPlayerColor
+        
+        return ZStack {
+            RoundedRectangle(cornerRadius: 4)
+                .fill(Color.white.opacity(0.1))
+                .stroke(currentPlayerColor.color.opacity(0.8), lineWidth: 2)
+            
+            Image(currentPlayerColor.chipImageName)
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .padding(width * 0.15)
+        }
+        .frame(width: width, height: height)
+        .glassEffect()
+        .scaleEffect(isActive ? 1.1 : 1.0)
+        .animation(.easeInOut(duration: 0.2), value: isActive)
+        #if os(macOS)
+        .help("Current Player: \(gameStateManager.currentPlayerName) (\(currentPlayerColor.displayName))")
+        #endif
+        #if !os(tvOS)
+        .onHover { isHovering in
+            if isHovering {
+                hoveredElements.insert(elementType)
+                #if !os(macOS)
+                showTooltipFor = elementType
+                #endif
+            } else {
+                hoveredElements.remove(elementType)
+                if showTooltipFor == elementType {
+                    showTooltipFor = nil
+                }
+            }
+        }
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { _ in
+                    if !touchedElements.contains(elementType) {
+                        touchedElements.insert(elementType)
+                        #if canImport(UIKit)
+                        showTooltipFor = elementType
+                        #endif
+                    }
+                }
+                .onEnded { _ in
+                    touchedElements.remove(elementType)
+                    #if canImport(UIKit)
+                    if showTooltipFor == elementType {
+                        showTooltipFor = nil
+                    }
+                    #endif
+                }
+        )
+        #else
+        .focusable(true) { isFocused in
+            if isFocused {
+                hoveredElements.insert(elementType)
+                showTooltipFor = elementType
+            } else {
+                hoveredElements.remove(elementType)
+                if showTooltipFor == elementType {
+                    showTooltipFor = nil
+                }
             }
         }
         #endif

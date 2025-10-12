@@ -60,7 +60,7 @@ enum AnchorPosition {
 
 // MARK: - Game State Variables
 struct GameState {
-    static var numPlayers: Int = 6
+    static var numPlayers: Int = 3  // Updated to match available chip colors (red, blue, green)
     static var numTeams: Int = 2
     static var currentPlayer: Int = 0
     

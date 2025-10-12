@@ -33,10 +33,12 @@ struct GameGrid: View {
             buildPercentageBasedGrid()
         }
         .id(gameStateManager.currentLayoutType) // Force rebuild when layout changes
-        .onChange(of: width) { _, _ in
+        .onChange(of: width) { _, newWidth in
+            print("🔄 GameGrid: Width changed to \(newWidth), chips in boardState: \(gameStateManager.boardState.count)")
             cachedGeometry = nil
         }
-        .onChange(of: height) { _, _ in
+        .onChange(of: height) { _, newHeight in
+            print("🔄 GameGrid: Height changed to \(newHeight), chips in boardState: \(gameStateManager.boardState.count)")
             cachedGeometry = nil
         }
         .onChange(of: gameStateManager.currentLayoutType) { _, newType in
@@ -63,7 +65,8 @@ struct GameGrid: View {
                     height: gridGeometry.cardHeight,
                     orientation: orientation
                 )
-                .id("\(position)-\(gameStateManager.currentLayoutType.rawValue)") // Force unique ID per layout
+                // Removed .id() modifier - parent grid's .id() handles layout changes
+                // Individual elements don't need unique IDs per rotation
                 .environmentObject(gameStateManager)
             }
         }

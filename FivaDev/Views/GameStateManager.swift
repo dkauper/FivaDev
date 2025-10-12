@@ -3,6 +3,8 @@
 //  FivaDev
 //
 //  Created by Doron Kauper on 9/18/25.
+//  Updated: October 11, 2025, 7:45 PM Pacific - Update discard overlay on chip placement
+//  Updated: October 11, 2025, 5:20 PM Pacific - Added chip placement system
 //  Updated: October 5, 2025, 1:40 PM Pacific - Added board layout toggle support
 //  Updated: October 4, 2025, 11:10 AM Pacific - Integrated DeckManager
 //  Optimized: October 3, 2025, 2:45 PM Pacific - Fixed memory leak in highlightingTimeouts
@@ -34,9 +36,21 @@ class GameStateManager: ObservableObject {
     /// Centralized deck manager for card operations
     @Published var deckManager = DeckManager()
     
+    // MARK: - Board State (Chip Placement)
+    
+    /// Tracks which player occupies each board position
+    /// Key: board position (0-99), Value: player color
+    @Published var boardState: [Int: PlayerColor] = [:]
+    
+    /// Corner positions (free spaces for all players)
+    private let cornerPositions: Set<Int> = [0, 9, 90, 99]
+    
     // MARK: - Game State
     
     @Published var highlightedCards: Set<String> = []
+    
+    /// Index of selected card in player's hand (for placement)
+    @Published var selectedCardIndex: Int? = nil
     
     /// Current player's hand of cards
     @Published var currentPlayerCards: [String] = [] {
@@ -60,6 +74,8 @@ class GameStateManager: ObservableObject {
     // MARK: - Initialization
     
     init() {
+        let instanceID = UUID().uuidString.prefix(8)
+        print("❗️ GameStateManager.init() called - Instance: \(instanceID)")
         // Initialize deck and deal cards
         startNewGame()
     }
@@ -69,6 +85,9 @@ class GameStateManager: ObservableObject {
     /// Starts a new game by shuffling deck and dealing cards
     func startNewGame() {
         print("🎮 GameStateManager: Starting new game...")
+        
+        // Clear board state
+        boardState.removeAll()
         
         // Shuffle deck for new game
         deckManager.shuffleNewGame()
@@ -101,6 +120,82 @@ class GameStateManager: ObservableObject {
         lastCardPlayed = nil
     }
     
+    // MARK: - Chip Placement
+    
+    /// Places a chip on the board at the specified position
+    /// - Parameters:
+    ///   - position: Board position (0-99)
+    ///   - playerColor: Color of the chip to place
+    /// - Returns: True if placement was successful
+    @discardableResult
+    func placeChip(at position: Int, color playerColor: PlayerColor) -> Bool {
+        // Validate position
+        guard position >= 0 && position < 100 else {
+            print("⚠️ GameStateManager: Invalid position \(position)")
+            return false
+        }
+        
+        // Check if position is already occupied
+        if isPositionOccupied(position) {
+            print("⚠️ GameStateManager: Position \(position) already occupied")
+            return false
+        }
+        
+        // Place chip
+        boardState[position] = playerColor
+        print("🎯 GameStateManager: Placed \(playerColor.rawValue) chip at position \(position)")
+        
+        return true
+    }
+    
+    /// Removes a chip from the board at the specified position
+    /// - Parameter position: Board position (0-99)
+    /// - Returns: True if removal was successful
+    @discardableResult
+    func removeChip(at position: Int) -> Bool {
+        // Validate position
+        guard position >= 0 && position < 100 else {
+            print("⚠️ GameStateManager: Invalid position \(position)")
+            return false
+        }
+        
+        // Check if position is occupied
+        guard boardState[position] != nil else {
+            print("⚠️ GameStateManager: No chip at position \(position)")
+            return false
+        }
+        
+        // TODO: Check if position is part of a completed FIVA (should not be removable)
+        
+        // Remove chip
+        let removedColor = boardState[position]!
+        boardState.removeValue(forKey: position)
+        print("🗑️ GameStateManager: Removed \(removedColor.rawValue) chip from position \(position)")
+        
+        return true
+    }
+    
+    /// Checks if a board position is occupied
+    /// - Parameter position: Board position (0-99)
+    /// - Returns: True if position has a chip
+    func isPositionOccupied(_ position: Int) -> Bool {
+        return boardState[position] != nil
+    }
+    
+    /// Gets the player color at a specific position
+    /// - Parameter position: Board position (0-99)
+    /// - Returns: Player color if occupied, nil otherwise
+    func getChipColor(at position: Int) -> PlayerColor? {
+        return boardState[position]
+    }
+    
+    /// Checks if a position is a corner (free space)
+    /// - Parameter position: Board position (0-99)
+    /// - Returns: True if position is a corner
+    func isCornerPosition(_ position: Int) -> Bool {
+        return cornerPositions.contains(position)
+    }
+    
     // MARK: - Card Operations
     
     /// Plays a card on the board at the specified position
@@ -114,27 +209,50 @@ class GameStateManager: ObservableObject {
             return
         }
         
-        // Remove card from player's hand
-        currentPlayerCards.remove(at: cardIndex)
-        
-        // Mark card as in play on board
-        deckManager.placeOnBoard(cardName)
-        
-        // Update last card played
-        lastCardPlayed = cardName
-        
-        // Draw replacement card
-        if let newCard = deckManager.drawCard() {
-            currentPlayerCards.append(newCard)
-            print("🎴 GameStateManager: Drew replacement card \(newCard)")
-        } else {
-            print("⚠️ GameStateManager: No cards available to draw")
+        // Validate position matches card (unless it's a two-eyed Jack)
+        let isTwoEyedJack = cardName == "J♥" || cardName == "J♦"
+        if !isTwoEyedJack {
+            let validPositions = getBoardPositions(for: cardName)
+            guard validPositions.contains(position) else {
+                print("⚠️ GameStateManager: Position \(position) doesn't match card \(cardName)")
+                return
+            }
         }
         
-        // Advance to next player
-        advanceToNextPlayer()
+        // Check if position is already occupied (unless corner)
+        if !isCornerPosition(position) && isPositionOccupied(position) {
+            print("⚠️ GameStateManager: Position \(position) already occupied")
+            return
+        }
         
-        print("✅ GameStateManager: Played \(cardName) at position \(position)")
+        // Get current player's color
+        let playerColor = PlayerColor.forPlayer(GameState.currentPlayer)
+        
+        // Place chip on board
+        if placeChip(at: position, color: playerColor) {
+            // Remove card from player's hand
+            currentPlayerCards.remove(at: cardIndex)
+            
+            // Mark card as in play on board
+            deckManager.placeOnBoard(cardName)
+            
+            // Update last card played and discard overlay
+            lastCardPlayed = cardName
+            mostRecentDiscard = cardName  // Show played card in discard overlay
+            
+            // Draw replacement card
+            if let newCard = deckManager.drawCard() {
+                currentPlayerCards.append(newCard)
+                print("🎴 GameStateManager: Drew replacement card \(newCard)")
+            } else {
+                print("⚠️ GameStateManager: No cards available to draw")
+            }
+            
+            // Advance to next player
+            advanceToNextPlayer()
+            
+            print("✅ GameStateManager: Played \(cardName) at position \(position)")
+        }
     }
     
     /// Discards a dead card (both board positions occupied)
@@ -180,10 +298,13 @@ class GameStateManager: ObservableObject {
             return false
         }
         
+        // Jacks are never dead (wild cards)
+        if cardName.contains("J") {
+            return false
+        }
+        
         // Check if all positions for this card are occupied
-        // TODO: Implement board occupation tracking
-        // For now, return false until board state is implemented
-        return false
+        return positions.allSatisfy { isPositionOccupied($0) }
     }
     
     // MARK: - Player Management
@@ -198,6 +319,101 @@ class GameStateManager: ObservableObject {
     func updateCurrentPlayer() {
         currentPlayerName = playerNames[GameState.currentPlayer % playerNames.count]
         print("👤 GameStateManager: Current player is now \(currentPlayerName)")
+    }
+    
+    /// Gets current player's color
+    var currentPlayerColor: PlayerColor {
+        return PlayerColor.forPlayer(GameState.currentPlayer)
+    }
+    
+    // MARK: - Card Selection
+    
+    /// Selects a card from the player's hand
+    /// - Parameter index: Index of the card in the hand
+    func selectCard(at index: Int) {
+        guard index >= 0 && index < currentPlayerCards.count else {
+            print("⚠️ GameStateManager: Invalid card index \(index)")
+            return
+        }
+        
+        selectedCardIndex = index
+        let cardName = currentPlayerCards[index]
+        print("🎴 GameStateManager: Selected card \(cardName) at index \(index)")
+        print("   Valid positions will be highlighted...")
+        
+        // Highlight valid positions for this card
+        highlightValidPositions(for: cardName)
+    }
+    
+    /// Deselects the currently selected card
+    func deselectCard() {
+        selectedCardIndex = nil
+        clearAllHighlights()
+        print("🎴 GameStateManager: Deselected card")
+    }
+    
+    /// Gets the currently selected card name
+    var selectedCardName: String? {
+        guard let index = selectedCardIndex,
+              index >= 0 && index < currentPlayerCards.count else {
+            return nil
+        }
+        return currentPlayerCards[index]
+    }
+    
+    /// Highlights valid positions for a card
+    private func highlightValidPositions(for cardName: String) {
+        clearAllHighlights()
+        
+        // Two-eyed Jacks can be placed anywhere
+        let isTwoEyedJack = cardName == "J♥" || cardName == "J♦"
+        
+        if isTwoEyedJack {
+            // Highlight all empty positions
+            for position in 0..<100 {
+                if !isPositionOccupied(position) || isCornerPosition(position) {
+                    highlightedCards.insert(currentLayout[position])
+                }
+            }
+        } else {
+            // Highlight positions matching this card
+            let positions = getBoardPositions(for: cardName)
+            for position in positions {
+                if !isPositionOccupied(position) || isCornerPosition(position) {
+                    highlightedCards.insert(cardName)
+                    break  // Only need to highlight the card type once
+                }
+            }
+        }
+    }
+    
+    /// Attempts to play the selected card at the specified position
+    /// - Parameter position: Board position to place the card
+    /// - Returns: True if the card was successfully played
+    @discardableResult
+    func playSelectedCard(at position: Int) -> Bool {
+        print("🎯 GameStateManager: Attempting to play at position \(position)")
+        
+        guard let cardIndex = selectedCardIndex else {
+            print("⚠️ GameStateManager: No card selected")
+            return false
+        }
+        
+        guard cardIndex >= 0 && cardIndex < currentPlayerCards.count else {
+            print("⚠️ GameStateManager: Invalid selected card index \(cardIndex)")
+            return false
+        }
+        
+        let cardName = currentPlayerCards[cardIndex]
+        print("   Playing card: \(cardName)")
+        
+        // Play the card
+        playCardOnBoard(cardName, position: position)
+        
+        // Deselect after playing
+        deselectCard()
+        
+        return true
     }
     
     // MARK: - Legacy Methods (Deprecated - Use playCardOnBoard/discardDeadCard instead)
@@ -292,14 +508,27 @@ class GameStateManager: ObservableObject {
         🎮 GAME STATE DEBUG INFO
         ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         🎲 Board Layout: \(currentLayoutType.rawValue)
-        👤 Current Player: \(currentPlayerName)
+        👤 Current Player: \(currentPlayerName) (\(currentPlayerColor.rawValue))
         🎴 Hand Size: \(currentPlayerCards.count) cards
+        🎯 Chips Placed: \(boardState.count) positions occupied
         ✨ Highlighted: \(Array(highlightedCards).sorted())
         🎯 Last Played: \(lastCardPlayed ?? "None")
         🗑️ Last Discard: \(mostRecentDiscard ?? "None")
         ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         \(deckManager.getDebugInfo())
         """
+    }
+    
+    /// Gets board state debug info
+    func getBoardStateDebugInfo() -> String {
+        var info = "🎯 Board State (\(boardState.count) chips):\n"
+        let sortedPositions = boardState.keys.sorted()
+        for position in sortedPositions {
+            let color = boardState[position]!
+            let card = currentLayout[position]
+            info += "  Position \(position) (\(card)): \(color.rawValue)\n"
+        }
+        return info
     }
     
     /// Gets highlighting debug info
@@ -330,6 +559,7 @@ class GameStateManager: ObservableObject {
         print("🔄 GameStateManager: Resetting game state...")
         
         clearAllHighlights()
+        boardState.removeAll()
         GameState.currentPlayer = 0
         
         // Start fresh game
@@ -343,8 +573,15 @@ class GameStateManager: ObservableObject {
             return
         }
         
-        // Simulate playing the first card
-        playCardOnBoard(card, position: 50)
+        // Get valid positions for this card
+        let positions = getBoardPositions(for: card)
+        guard let position = positions.first else {
+            print("⚠️ GameStateManager: No valid positions for \(card)")
+            return
+        }
+        
+        // Simulate playing the first card at its first valid position
+        playCardOnBoard(card, position: position)
     }
     
     /// Verifies game state integrity
@@ -355,7 +592,10 @@ class GameStateManager: ObservableObject {
         
         let handValid = handSize <= expectedHandSize
         
-        if deckIntegrity && handValid {
+        // Check board state validity
+        let boardValid = boardState.keys.allSatisfy { $0 >= 0 && $0 < 100 }
+        
+        if deckIntegrity && handValid && boardValid {
             print("✅ GameStateManager: Integrity check passed")
         } else {
             print("❌ GameStateManager: Integrity check FAILED")
@@ -365,9 +605,12 @@ class GameStateManager: ObservableObject {
             if !handValid {
                 print("   - Hand size invalid: \(handSize) (expected ≤ \(expectedHandSize))")
             }
+            if !boardValid {
+                print("   - Board state has invalid positions")
+            }
         }
         
-        return deckIntegrity && handValid
+        return deckIntegrity && handValid && boardValid
     }
     
     #endif

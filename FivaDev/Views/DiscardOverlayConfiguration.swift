@@ -4,7 +4,7 @@
 //
 //  Revised to match PlayerHandOverlay geometry system with SF Symbol icons
 //  Created by Doron Kauper on 9/22/25.
-//  Updated: October 11, 2025, Pacific Time
+//  Updated: October 11, 2025, 6:30 PM Pacific - Added current player chip element
 //
 
 import SwiftUI
@@ -12,6 +12,7 @@ import SwiftUI
 // MARK: - Discard Grid Element Types
 enum DiscardElementType: String, CaseIterable {
     case lastDiscard = "lastDiscard"
+    case currentPlayerChip = "currentPlayerChip"
     case lastPlayer = "lastPlayer"
     case nextPlayer = "nextPlayer"
     case score = "score"
@@ -20,6 +21,7 @@ enum DiscardElementType: String, CaseIterable {
     var displayName: String {
         switch self {
         case .lastDiscard: return "Last Discard"
+        case .currentPlayerChip: return "Current Player"
         case .lastPlayer: return "Last Player"
         case .nextPlayer: return "Next Player"
         case .score: return "Score"
@@ -30,6 +32,7 @@ enum DiscardElementType: String, CaseIterable {
     var sfSymbolName: String {
         switch self {
         case .lastDiscard: return "" // No icon, shows card
+        case .currentPlayerChip: return "" // No icon, shows chip image
         case .lastPlayer: return "figure.walk.departure"
         case .nextPlayer: return "figure.walk.arrival"
         case .score: return "list.number"
@@ -40,6 +43,7 @@ enum DiscardElementType: String, CaseIterable {
     var tooltip: String {
         switch self {
         case .lastDiscard: return "Last Discard"
+        case .currentPlayerChip: return "Current Player's Turn"
         case .lastPlayer: return "Last Player"
         case .nextPlayer: return "Next Player"
         case .score: return "Score" // Will append gameScore dynamically
@@ -71,6 +75,7 @@ enum ElementContentType {
     case card(placeholder: PlayingCardData?) // Playing card image with optional placeholder
     case sfSymbol(name: String, rendering: SFSymbolRenderingMode)
     case text(content: String)
+    case playerChip(color: PlayerColor) // Player chip image
     case dynamic // Content determined at runtime
 }
 
@@ -166,13 +171,22 @@ struct DiscardOverlayConfiguration {
                     priority: 1,
                     contentType: .card(placeholder: PlayingCardData(suit: .hearts, rank: .king, isJoker: false, jokerColor: nil))
                 ),
+                .currentPlayerChip: DiscardElementLayout(
+                    topPadding: 0.08,       // 8% from top of overlay
+                    bottomPadding: 0.08,    // 8% from bottom of overlay
+                    leftPadding: 0.1,       // 10% from left of overlay
+                    rightPadding: 0.1,      // 10% from right of overlay
+                    isVisible: true,
+                    priority: 2,
+                    contentType: .playerChip(color: .red)
+                ),
                 .lastPlayer: DiscardElementLayout(
                     topPadding: 0.08,       // 8% from top of overlay
                     bottomPadding: 0.08,    // 8% from bottom of overlay
                     leftPadding: 0.197,     // 19.7% from left of overlay
                     rightPadding: 0.653,    // 65.3% from right of overlay
                     isVisible: true,
-                    priority: 2,
+                    priority: 3,
                     contentType: .sfSymbol(name: "figure.walk.departure", rendering: .teamPalette(teamIndex: 0))
                 ),
                 .nextPlayer: DiscardElementLayout(
@@ -181,7 +195,7 @@ struct DiscardOverlayConfiguration {
                     leftPadding: 0.35,      // 35% from left of overlay
                     rightPadding: 0.5,      // 50% from right of overlay
                     isVisible: true,
-                    priority: 3,
+                    priority: 4,
                     contentType: .sfSymbol(name: "figure.walk.arrival", rendering: .teamPalette(teamIndex: 1))
                 ),
                 .score: DiscardElementLayout(
@@ -190,7 +204,7 @@ struct DiscardOverlayConfiguration {
                     leftPadding: 0.503,     // 50.3% from left of overlay
                     rightPadding: 0.347,    // 34.7% from right of overlay
                     isVisible: true,
-                    priority: 4,
+                    priority: 5,
                     contentType: .sfSymbol(name: "list.number", rendering: .teamPalette(teamIndex: 0))
                 ),
                 .timer: DiscardElementLayout(
@@ -199,7 +213,7 @@ struct DiscardOverlayConfiguration {
                     leftPadding: 0.85,      // 85% from left of overlay
                     rightPadding: 0.02,     // 2% from right of overlay (rightmost icon)
                     isVisible: true,
-                    priority: 5,
+                    priority: 6,
                     contentType: .sfSymbol(name: "timer", rendering: .teamPalette(teamIndex: 0))
                 )
             ]
@@ -226,13 +240,22 @@ struct DiscardOverlayConfiguration {
                     priority: 1,
                     contentType: .card(placeholder: PlayingCardData(suit: .hearts, rank: .king, isJoker: false, jokerColor: nil))
                 ),
+                .currentPlayerChip: DiscardElementLayout(
+                    topPadding: 0.1,        // 10% from top of overlay
+                    bottomPadding: 0.1,     // 10% from bottom of overlay
+                    leftPadding: 0.1,       // 10% from left of overlay
+                    rightPadding: 0.1,      // 10% from right of overlay
+                    isVisible: true,
+                    priority: 2,
+                    contentType: .playerChip(color: .red)
+                ),
                 .lastPlayer: DiscardElementLayout(
                     topPadding: 0.215,      // 21.5% from top of overlay
                     bottomPadding: 0.605,   // 60.5% from bottom of overlay
                     leftPadding: 0.275,     // 27.5% from left of overlay
                     rightPadding: 0.225,    // 22.5% from right of overlay
                     isVisible: true,
-                    priority: 2,
+                    priority: 3,
                     contentType: .sfSymbol(name: "figure.walk.departure", rendering: .teamPalette(teamIndex: 0))
                 ),
                 .nextPlayer: DiscardElementLayout(
@@ -241,7 +264,7 @@ struct DiscardOverlayConfiguration {
                     leftPadding: 0.072,     // 7.2% from left of overlay
                     rightPadding: 0.03,     // 3% from right of overlay
                     isVisible: true,
-                    priority: 3,
+                    priority: 4,
                     contentType: .sfSymbol(name: "figure.walk.arrival", rendering: .teamPalette(teamIndex: 1))
                 ),
                 .score: DiscardElementLayout(
@@ -250,7 +273,7 @@ struct DiscardOverlayConfiguration {
                     leftPadding: 0.275,     // 27.5% from left of overlay
                     rightPadding: 0.225,    // 22.5% from right of overlay
                     isVisible: true,
-                    priority: 4,
+                    priority: 5,
                     contentType: .sfSymbol(name: "list.number", rendering: .teamPalette(teamIndex: 0))
                 ),
                 .timer: DiscardElementLayout(
@@ -259,7 +282,7 @@ struct DiscardOverlayConfiguration {
                     leftPadding: 0.22,      // 22% from left of overlay
                     rightPadding: 0.19,     // 19% from right of overlay
                     isVisible: true,
-                    priority: 5,
+                    priority: 6,
                     contentType: .sfSymbol(name: "timer", rendering: .teamPalette(teamIndex: 0))
                 )
             ]
@@ -286,13 +309,22 @@ struct DiscardOverlayConfiguration {
                     priority: 1,
                     contentType: .card(placeholder: PlayingCardData(suit: .hearts, rank: .king, isJoker: false, jokerColor: nil))
                 ),
+                .currentPlayerChip: DiscardElementLayout(
+                    topPadding: 0.1,        // 10% from top of overlay
+                    bottomPadding: 0.1,     // 10% from bottom of overlay
+                    leftPadding: 0.1,       // 10% from left of overlay
+                    rightPadding: 0.1,      // 10% from right of overlay
+                    isVisible: true,
+                    priority: 2,
+                    contentType: .playerChip(color: .red)
+                ),
                 .lastPlayer: DiscardElementLayout(
                     topPadding: 0.24,       // 24% from top of overlay
                     bottomPadding: 0.63,    // 63% from bottom of overlay
                     leftPadding: 0.1,       // 10% from left of overlay
                     rightPadding: 0.0,      // 0% from right of overlay
                     isVisible: true,
-                    priority: 2,
+                    priority: 3,
                     contentType: .sfSymbol(name: "figure.walk.departure", rendering: .teamPalette(teamIndex: 0))
                 ),
                 .nextPlayer: DiscardElementLayout(
@@ -301,7 +333,7 @@ struct DiscardOverlayConfiguration {
                     leftPadding: 0.1,       // 10% from left of overlay
                     rightPadding: 0.0,      // 0% from right of overlay
                     isVisible: true,
-                    priority: 3,
+                    priority: 4,
                     contentType: .sfSymbol(name: "figure.walk.arrival", rendering: .teamPalette(teamIndex: 1))
                 ),
                 .score: DiscardElementLayout(
@@ -310,7 +342,7 @@ struct DiscardOverlayConfiguration {
                     leftPadding: 0.1,       // 10% from left of overlay
                     rightPadding: 0.0,      // 0% from right of overlay
                     isVisible: true,
-                    priority: 4,
+                    priority: 5,
                     contentType: .sfSymbol(name: "list.number", rendering: .teamPalette(teamIndex: 0))
                 ),
                 .timer: DiscardElementLayout(
@@ -319,7 +351,7 @@ struct DiscardOverlayConfiguration {
                     leftPadding: 0.1,       // 10% from left of overlay
                     rightPadding: 0.0,      // 0% from right of overlay
                     isVisible: true,
-                    priority: 5,
+                    priority: 6,
                     contentType: .sfSymbol(name: "timer", rendering: .teamPalette(teamIndex: 0))
                 )
             ]
@@ -346,13 +378,22 @@ struct DiscardOverlayConfiguration {
                     priority: 1,
                     contentType: .card(placeholder: PlayingCardData(suit: .hearts, rank: .king, isJoker: false, jokerColor: nil))
                 ),
+                .currentPlayerChip: DiscardElementLayout(
+                    topPadding: 0.1,        // 10% from top of overlay
+                    bottomPadding: 0.1,     // 10% from bottom of overlay
+                    leftPadding: 0.1,       // 10% from left of overlay
+                    rightPadding: 0.1,      // 10% from right of overlay
+                    isVisible: true,
+                    priority: 2,
+                    contentType: .playerChip(color: .red)
+                ),
                 .lastPlayer: DiscardElementLayout(
                     topPadding: 0.05,       // 5% from top of overlay
                     bottomPadding: 0.65,    // 65% from bottom of overlay
                     leftPadding: 0.55,      // 55% from left of overlay
                     rightPadding: 0.05,     // 5% from right of overlay
                     isVisible: true,
-                    priority: 2,
+                    priority: 3,
                     contentType: .sfSymbol(name: "figure.walk.departure", rendering: .teamPalette(teamIndex: 0))
                 ),
                 .nextPlayer: DiscardElementLayout(
@@ -361,7 +402,7 @@ struct DiscardOverlayConfiguration {
                     leftPadding: 0.05,      // 5% from left of overlay
                     rightPadding: 0.5,      // 50% from right of overlay
                     isVisible: true,
-                    priority: 3,
+                    priority: 4,
                     contentType: .sfSymbol(name: "figure.walk.arrival", rendering: .teamPalette(teamIndex: 1))
                 ),
                 .score: DiscardElementLayout(
@@ -370,7 +411,7 @@ struct DiscardOverlayConfiguration {
                     leftPadding: 0.55,      // 55% from left of overlay
                     rightPadding: 0.05,     // 5% from right of overlay
                     isVisible: true,
-                    priority: 4,
+                    priority: 5,
                     contentType: .sfSymbol(name: "list.number", rendering: .teamPalette(teamIndex: 0))
                 ),
                 .timer: DiscardElementLayout(
@@ -379,7 +420,7 @@ struct DiscardOverlayConfiguration {
                     leftPadding: 0.05,      // 5% from left of overlay
                     rightPadding: 0.05,     // 5% from right of overlay (full width)
                     isVisible: true,
-                    priority: 5,
+                    priority: 6,
                     contentType: .sfSymbol(name: "timer", rendering: .teamPalette(teamIndex: 0))
                 )
             ]
@@ -406,13 +447,22 @@ struct DiscardOverlayConfiguration {
                     priority: 1,
                     contentType: .card(placeholder: PlayingCardData(suit: .hearts, rank: .king, isJoker: false, jokerColor: nil))
                 ),
+                .currentPlayerChip: DiscardElementLayout(
+                    topPadding: 0.1,        // 10% from top of overlay
+                    bottomPadding: 0.1,     // 10% from bottom of overlay
+                    leftPadding: 0.1,       // 10% from left of overlay
+                    rightPadding: 0.1,      // 10% from right of overlay
+                    isVisible: true,
+                    priority: 2,
+                    contentType: .playerChip(color: .red)
+                ),
                 .lastPlayer: DiscardElementLayout(
                     topPadding: 0.05,       // 5% from top of overlay
                     bottomPadding: 0.7,     // 70% from bottom of overlay
                     leftPadding: 0.3,       // 30% from left of overlay
                     rightPadding: 0.45,     // 45% from right of overlay
                     isVisible: true,
-                    priority: 2,
+                    priority: 3,
                     contentType: .sfSymbol(name: "figure.walk.departure", rendering: .teamPalette(teamIndex: 0))
                 ),
                 .nextPlayer: DiscardElementLayout(
@@ -421,7 +471,7 @@ struct DiscardOverlayConfiguration {
                     leftPadding: 0.8,       // 80% from left of overlay
                     rightPadding: 0.05,     // 5% from right of overlay
                     isVisible: true,
-                    priority: 3,
+                    priority: 4,
                     contentType: .sfSymbol(name: "figure.walk.arrival", rendering: .teamPalette(teamIndex: 1))
                 ),
                 .score: DiscardElementLayout(
@@ -430,7 +480,7 @@ struct DiscardOverlayConfiguration {
                     leftPadding: 0.05,      // 5% from left of overlay
                     rightPadding: 0.8,      // 80% from right of overlay
                     isVisible: true,
-                    priority: 4,
+                    priority: 5,
                     contentType: .sfSymbol(name: "list.number", rendering: .teamPalette(teamIndex: 0))
                 ),
                 .timer: DiscardElementLayout(
@@ -439,7 +489,7 @@ struct DiscardOverlayConfiguration {
                     leftPadding: 0.05,      // 5% from left of overlay
                     rightPadding: 0.05,     // 5% from right of overlay (full width)
                     isVisible: true,
-                    priority: 5,
+                    priority: 6,
                     contentType: .sfSymbol(name: "timer", rendering: .teamPalette(teamIndex: 0))
                 )
             ]
