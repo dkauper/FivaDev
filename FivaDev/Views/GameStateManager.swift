@@ -3,6 +3,9 @@
 //  FivaDev
 //
 //  Created by Doron Kauper on 9/18/25.
+//  Updated: October 12, 2025, 9:50 PM Pacific - Added 5-in-a-row detection system
+//  Updated: October 12, 2025, 1:30 PM Pacific - Added multi-player hand tracking
+//  Updated: October 12, 2025, 6:10 PM Pacific - Refactored to use GameState model
 //  Updated: October 11, 2025, 7:45 PM Pacific - Update discard overlay on chip placement
 //  Updated: October 11, 2025, 5:20 PM Pacific - Added chip placement system
 //  Updated: October 5, 2025, 1:40 PM Pacific - Added board layout toggle support
@@ -13,8 +16,37 @@
 import SwiftUI
 import Combine
 
+// MARK: - FIVA Detection Models
+
+/// Represents a completed 5-in-a-row (FIVA)
+struct CompletedFIVA: Equatable {
+    let positions: Set<Int>
+    let color: PlayerColor
+    let direction: FIVADirection
+    
+    enum FIVADirection: String {
+        case horizontal = "Horizontal"
+        case vertical = "Vertical"
+        case diagonalDown = "Diagonal ↘"
+        case diagonalUp = "Diagonal ↗"
+    }
+}
+
+// MARK: - GameStateManager
+
 @MainActor
 class GameStateManager: ObservableObject {
+    // MARK: - Game Configuration
+    
+    /// Game configuration (will be set by pre-game dialog in future)
+    @Published var gameState: GameState = .threePlayer {
+        didSet {
+            // Sync player names when game state changes
+            updatePlayerNames()
+            print("🎮 GameStateManager: Game configured for \(gameState.numPlayers) players")
+        }
+    }
+    
     // MARK: - Board Layout
     
     /// Current board layout type (toggle between legacy and digital-optimized)
@@ -36,6 +68,12 @@ class GameStateManager: ObservableObject {
     /// Centralized deck manager for card operations
     @Published var deckManager = DeckManager()
     
+    // MARK: - Player Hand Management
+    
+    /// Stores each player's hand of cards
+    /// Key: player index (0-11), Value: array of card names
+    @Published private var playerHands: [Int: [String]] = [:]
+    
     // MARK: - Board State (Chip Placement)
     
     /// Tracks which player occupies each board position
@@ -45,6 +83,14 @@ class GameStateManager: ObservableObject {
     /// Corner positions (free spaces for all players)
     private let cornerPositions: Set<Int> = [0, 9, 90, 99]
     
+    // MARK: - FIVA Tracking
+    
+    /// Tracks all completed FIVAs to prevent chip removal
+    @Published var completedFIVAs: [CompletedFIVA] = []
+    
+    /// Tracks FIVA count per team
+    @Published var teamFIVACount: [PlayerColor: Int] = [:]
+    
     // MARK: - Game State
     
     @Published var highlightedCards: Set<String> = []
@@ -52,11 +98,14 @@ class GameStateManager: ObservableObject {
     /// Index of selected card in player's hand (for placement)
     @Published var selectedCardIndex: Int? = nil
     
-    /// Current player's hand of cards
-    @Published var currentPlayerCards: [String] = [] {
-        didSet {
-            // Trigger UI update when cards change
-            print("🎴 GameStateManager: Player hand updated - \(currentPlayerCards.count) cards")
+    /// Current player's hand of cards (computed from playerHands)
+    var currentPlayerCards: [String] {
+        get {
+            return playerHands[gameState.currentPlayer] ?? []
+        }
+        set {
+            playerHands[gameState.currentPlayer] = newValue
+            print("🎴 GameStateManager: Player \(gameState.currentPlayer) hand updated - \(newValue.count) cards")
         }
     }
     
@@ -68,9 +117,6 @@ class GameStateManager: ObservableObject {
     // Track the current highlighting state to prevent rapid state changes
     private var highlightingTimeouts: [String: Task<Void, Never>] = [:]
     
-    // Player names array for easy access
-    private let playerNames = ["Player 1", "Player 2", "Player 3", "Player 4"]
-    
     // MARK: - Initialization
     
     init() {
@@ -78,6 +124,24 @@ class GameStateManager: ObservableObject {
         print("❗️ GameStateManager.init() called - Instance: \(instanceID)")
         // Initialize deck and deal cards
         startNewGame()
+    }
+    
+    // MARK: - Game Configuration
+    
+    /// Configures game for new match (called by pre-game dialog or testing)
+    /// - Parameters:
+    ///   - players: Number of players (2-12)
+    ///   - teams: Number of teams (2-3)
+    ///   - names: Player names
+    ///   - teamAssignments: Optional custom team assignments
+    func configureGame(players: Int, teams: Int, names: [String], teamAssignments: [Int]? = nil) {
+        gameState.configure(players: players, teams: teams, names: names, teamAssignments: teamAssignments)
+        startNewGame()
+    }
+    
+    /// Updates internal player name tracking from game state
+    private func updatePlayerNames() {
+        currentPlayerName = gameState.currentPlayerName
     }
     
     // MARK: - Game Setup
@@ -89,31 +153,52 @@ class GameStateManager: ObservableObject {
         // Clear board state
         boardState.removeAll()
         
+        // Clear FIVA tracking
+        completedFIVAs.removeAll()
+        teamFIVACount.removeAll()
+        
+        // Clear player hands
+        playerHands.removeAll()
+        
+        // Reset game state
+        gameState.resetForNewGame()
+        
         // Shuffle deck for new game
         deckManager.shuffleNewGame()
         
-        // Deal cards to current player
-        dealCardsToCurrentPlayer()
+        // Deal cards to ALL players
+        dealCardsToAllPlayers()
         
         // Setup initial game state
         setupInitialGameState()
         
         print("✅ GameStateManager: New game ready!")
+        print("   Players: \(gameState.numPlayers)")
+        print("   Cards per player: \(gameState.cardsPerPlayer)")
+        print("   FIVAs to win: \(gameState.fivasToWin)")
     }
     
-    /// Deals initial cards to the current player
-    /// Future: Extend to deal to all players
-    private func dealCardsToCurrentPlayer() {
-        let cardsPerPlayer = GameState.cardsPerPlayer
-        currentPlayerCards = deckManager.drawCards(count: cardsPerPlayer)
+    /// Deals initial cards to all players
+    private func dealCardsToAllPlayers() {
+        let cardsPerPlayer = gameState.cardsPerPlayer
         
-        print("🎴 GameStateManager: Dealt \(currentPlayerCards.count) cards to \(currentPlayerName)")
-        print("   Cards: \(currentPlayerCards)")
+        // Clear existing hands
+        playerHands.removeAll()
+        
+        // Deal to each player
+        for playerIndex in 0..<gameState.numPlayers {
+            let cards = deckManager.drawCards(count: cardsPerPlayer)
+            playerHands[playerIndex] = cards
+            print("🎴 GameStateManager: Dealt \(cards.count) cards to Player \(playerIndex + 1)")
+        }
+        
+        // Log current player's hand
+        print("   Current player (\(currentPlayerName)) hand: \(currentPlayerCards)")
     }
     
     /// Setup initial game state for testing purposes
     private func setupInitialGameState() {
-        currentPlayerName = playerNames[GameState.currentPlayer]
+        currentPlayerName = gameState.currentPlayerName
         
         // Clear demo values - using real deck now
         mostRecentDiscard = nil
@@ -165,7 +250,11 @@ class GameStateManager: ObservableObject {
             return false
         }
         
-        // TODO: Check if position is part of a completed FIVA (should not be removable)
+        // Prevent removal from completed FIVAs
+        if isPartOfCompletedFIVA(position) {
+            print("🚫 GameStateManager: Cannot remove chip at \(position) - part of completed FIVA")
+            return false
+        }
         
         // Remove chip
         let removedColor = boardState[position]!
@@ -225,11 +314,22 @@ class GameStateManager: ObservableObject {
             return
         }
         
-        // Get current player's color
-        let playerColor = PlayerColor.forPlayer(GameState.currentPlayer)
+        // Get current player's color based on their team
+        let playerColor = gameState.colorFor(player: gameState.currentPlayer)
         
         // Place chip on board
         if placeChip(at: position, color: playerColor) {
+            // Check for completed FIVAs
+            let newFIVAs = checkForNewFIVAs(at: position, color: playerColor)
+            if !newFIVAs.isEmpty {
+                print("🎉 GameStateManager: Completed \(newFIVAs.count) FIVA(s)!")
+                
+                // Check for winner
+                if let winner = checkForWinner() {
+                    print("🏆 GameStateManager: GAME OVER! \(winner.rawValue) team wins!")
+                }
+            }
+            
             // Remove card from player's hand
             currentPlayerCards.remove(at: cardIndex)
             
@@ -307,23 +407,230 @@ class GameStateManager: ObservableObject {
         return positions.allSatisfy { isPositionOccupied($0) }
     }
     
+    // MARK: - FIVA Detection
+    
+    /// Checks if placing a chip creates any new FIVAs
+    /// - Parameters:
+    ///   - position: Position where chip was just placed
+    ///   - color: Color of the chip
+    /// - Returns: Array of newly completed FIVAs
+    @discardableResult
+    func checkForNewFIVAs(at position: Int, color: PlayerColor) -> [CompletedFIVA] {
+        var newFIVAs: [CompletedFIVA] = []
+        
+        // Check all 4 directions
+        if let fiva = checkHorizontalFIVA(at: position, color: color) {
+            if !completedFIVAs.contains(fiva) {
+                newFIVAs.append(fiva)
+                completedFIVAs.append(fiva)
+            }
+        }
+        
+        if let fiva = checkVerticalFIVA(at: position, color: color) {
+            if !completedFIVAs.contains(fiva) {
+                newFIVAs.append(fiva)
+                completedFIVAs.append(fiva)
+            }
+        }
+        
+        if let fiva = checkDiagonalDownFIVA(at: position, color: color) {
+            if !completedFIVAs.contains(fiva) {
+                newFIVAs.append(fiva)
+                completedFIVAs.append(fiva)
+            }
+        }
+        
+        if let fiva = checkDiagonalUpFIVA(at: position, color: color) {
+            if !completedFIVAs.contains(fiva) {
+                newFIVAs.append(fiva)
+                completedFIVAs.append(fiva)
+            }
+        }
+        
+        // Update team FIVA count
+        if !newFIVAs.isEmpty {
+            teamFIVACount[color, default: 0] += newFIVAs.count
+            print("🎉 GameStateManager: \(color.rawValue) completed \(newFIVAs.count) FIVA(s)!")
+            print("   Total FIVAs for \(color.rawValue): \(teamFIVACount[color] ?? 0)")
+        }
+        
+        return newFIVAs
+    }
+    
+    // MARK: - Direction-Specific FIVA Checks
+    
+    /// Checks horizontal line (row)
+    private func checkHorizontalFIVA(at position: Int, color: PlayerColor) -> CompletedFIVA? {
+        let row = position / 10
+        let startPos = row * 10
+        
+        // Scan the entire row for sequences of 5
+        for col in 0...5 {  // Can start at columns 0-5 for a 5-length sequence
+            let positions = (0..<5).map { startPos + col + $0 }
+            if isValidFIVA(positions: positions, color: color) {
+                return CompletedFIVA(
+                    positions: Set(positions),
+                    color: color,
+                    direction: .horizontal
+                )
+            }
+        }
+        return nil
+    }
+    
+    /// Checks vertical line (column)
+    private func checkVerticalFIVA(at position: Int, color: PlayerColor) -> CompletedFIVA? {
+        let col = position % 10
+        
+        // Scan the entire column for sequences of 5
+        for row in 0...5 {  // Can start at rows 0-5 for a 5-length sequence
+            let positions = (0..<5).map { (row + $0) * 10 + col }
+            if isValidFIVA(positions: positions, color: color) {
+                return CompletedFIVA(
+                    positions: Set(positions),
+                    color: color,
+                    direction: .vertical
+                )
+            }
+        }
+        return nil
+    }
+    
+    /// Checks diagonal down-right (↘)
+    private func checkDiagonalDownFIVA(at position: Int, color: PlayerColor) -> CompletedFIVA? {
+        let row = position / 10
+        let col = position % 10
+        
+        // Find leftmost position in this diagonal that could start a FIVA
+        let startRow = max(0, row - min(row, col))
+        let startCol = max(0, col - min(row, col))
+        
+        // Check all possible 5-length sequences on this diagonal
+        var checkRow = startRow
+        var checkCol = startCol
+        
+        while checkRow <= 5 && checkCol <= 5 {  // Can fit a 5-length sequence
+            let positions = (0..<5).map { (checkRow + $0) * 10 + (checkCol + $0) }
+            if isValidFIVA(positions: positions, color: color) {
+                return CompletedFIVA(
+                    positions: Set(positions),
+                    color: color,
+                    direction: .diagonalDown
+                )
+            }
+            checkRow += 1
+            checkCol += 1
+        }
+        return nil
+    }
+    
+    /// Checks diagonal up-right (↗)
+    private func checkDiagonalUpFIVA(at position: Int, color: PlayerColor) -> CompletedFIVA? {
+        let row = position / 10
+        let col = position % 10
+        
+        // Find leftmost position in this diagonal that could start a FIVA
+        let startRow = min(9, row + min(9 - row, col))
+        let startCol = max(0, col - min(9 - row, col))
+        
+        // Check all possible 5-length sequences on this diagonal
+        var checkRow = startRow
+        var checkCol = startCol
+        
+        while checkRow >= 4 && checkCol <= 5 {  // Can fit a 5-length sequence
+            let positions = (0..<5).map { (checkRow - $0) * 10 + (checkCol + $0) }
+            if isValidFIVA(positions: positions, color: color) {
+                return CompletedFIVA(
+                    positions: Set(positions),
+                    color: color,
+                    direction: .diagonalUp
+                )
+            }
+            checkRow -= 1
+            checkCol += 1
+        }
+        return nil
+    }
+    
+    // MARK: - FIVA Validation
+    
+    /// Validates if 5 positions form a valid FIVA for a color
+    /// Handles corner wildcards (any player can use)
+    private func isValidFIVA(positions: [Int], color: PlayerColor) -> Bool {
+        guard positions.count == 5 else { return false }
+        
+        for position in positions {
+            // Corner positions count as wildcards (free for all)
+            if cornerPositions.contains(position) {
+                continue
+            }
+            
+            // Position must be occupied by this color
+            if let occupyingColor = boardState[position] {
+                if occupyingColor != color {
+                    return false
+                }
+            } else {
+                return false  // Position must be occupied
+            }
+        }
+        
+        return true
+    }
+    
+    /// Checks if a position is part of any completed FIVA
+    /// Used to prevent chip removal from completed FIVAs
+    func isPartOfCompletedFIVA(_ position: Int) -> Bool {
+        return completedFIVAs.contains { fiva in
+            fiva.positions.contains(position)
+        }
+    }
+    
+    // MARK: - Win Condition Check
+    
+    /// Checks if any team has won the game
+    /// - Returns: Winning color if game is won, nil otherwise
+    func checkForWinner() -> PlayerColor? {
+        let fivasNeeded = gameState.fivasToWin
+        
+        for (color, count) in teamFIVACount {
+            if count >= fivasNeeded {
+                print("🏆 GameStateManager: \(color.rawValue) WINS with \(count) FIVA(s)!")
+                return color
+            }
+        }
+        
+        return nil
+    }
+    
     // MARK: - Player Management
     
-    /// Advances to the next player
+    /// Advances to the next player and restores their hand
     private func advanceToNextPlayer() {
-        GameState.currentPlayer = (GameState.currentPlayer + 1) % GameState.numPlayers
+        let previousPlayer = gameState.currentPlayer
+        let previousHand = currentPlayerCards
+        
+        gameState.advanceToNextPlayer()
+        
+        // Verify hand was preserved
+        let restoredHand = currentPlayerCards
+        
+        print("👤 GameStateManager: Switched from Player \(previousPlayer + 1) to Player \(gameState.currentPlayer + 1)")
+        print("   Previous hand size: \(previousHand.count)")
+        print("   Restored hand size: \(restoredHand.count)")
+        
         updateCurrentPlayer()
     }
     
     /// Updates the current player name
     func updateCurrentPlayer() {
-        currentPlayerName = playerNames[GameState.currentPlayer % playerNames.count]
+        currentPlayerName = gameState.currentPlayerName
         print("👤 GameStateManager: Current player is now \(currentPlayerName)")
     }
     
     /// Gets current player's color
     var currentPlayerColor: PlayerColor {
-        return PlayerColor.forPlayer(GameState.currentPlayer)
+        return gameState.colorFor(player: gameState.currentPlayer)
     }
     
     // MARK: - Card Selection
@@ -497,26 +804,80 @@ class GameStateManager: ObservableObject {
         highlightedCards.removeAll()
     }
     
+    // MARK: - Hand Management Helpers
+    
+    /// Gets hand information for all players
+    func getAllPlayerHands() -> [Int: [String]] {
+        return playerHands
+    }
+    
+    /// Gets specific player's hand
+    func getPlayerHand(_ playerIndex: Int) -> [String] {
+        return playerHands[playerIndex] ?? []
+    }
+    
     // MARK: - Debug Methods
     
     #if DEBUG
     
     /// Gets comprehensive game state debug info
     func getDebugInfo() -> String {
+        var handsInfo = "👥 Player Hands:\n"
+        for playerIndex in 0..<gameState.numPlayers {
+            let hand = playerHands[playerIndex] ?? []
+            let isCurrent = playerIndex == gameState.currentPlayer
+            let marker = isCurrent ? " ← CURRENT" : ""
+            handsInfo += "   Player \(playerIndex + 1): \(hand.count) cards\(marker)\n"
+        }
+        
         return """
         ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         🎮 GAME STATE DEBUG INFO
         ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         🎲 Board Layout: \(currentLayoutType.rawValue)
+        👥 Players: \(gameState.numPlayers) (\(gameState.teamConfigurationDescription))
         👤 Current Player: \(currentPlayerName) (\(currentPlayerColor.rawValue))
-        🎴 Hand Size: \(currentPlayerCards.count) cards
+        🎴 Current Hand: \(currentPlayerCards)
         🎯 Chips Placed: \(boardState.count) positions occupied
+        🏆 FIVAs to Win: \(gameState.fivasToWin)
         ✨ Highlighted: \(Array(highlightedCards).sorted())
         🎯 Last Played: \(lastCardPlayed ?? "None")
         🗑️ Last Discard: \(mostRecentDiscard ?? "None")
         ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        \(handsInfo)
+        ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        \(getFIVADebugInfo())
+        ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         \(deckManager.getDebugInfo())
         """
+    }
+    
+    /// Gets FIVA status debug info
+    func getFIVADebugInfo() -> String {
+        var info = "🎯 FIVA Status:\n"
+        
+        // Team FIVA counts
+        for color in PlayerColor.allCases {
+            let count = teamFIVACount[color] ?? 0
+            let marker = count >= gameState.fivasToWin ? " 🏆 WINNER!" : ""
+            info += "   \(color.rawValue): \(count) FIVA(s)\(marker)\n"
+        }
+        
+        // Completed FIVAs detail
+        if completedFIVAs.isEmpty {
+            info += "   No completed FIVAs yet"
+        } else {
+            info += "   Completed FIVAs (\(completedFIVAs.count)):\n"
+            for (index, fiva) in completedFIVAs.enumerated() {
+                let positions = fiva.positions.sorted()
+                info += "   \(index + 1). \(fiva.color.rawValue) \(fiva.direction.rawValue) @ \(positions)"
+                if index < completedFIVAs.count - 1 {
+                    info += "\n"
+                }
+            }
+        }
+        
+        return info
     }
     
     /// Gets board state debug info
@@ -526,7 +887,8 @@ class GameStateManager: ObservableObject {
         for position in sortedPositions {
             let color = boardState[position]!
             let card = currentLayout[position]
-            info += "  Position \(position) (\(card)): \(color.rawValue)\n"
+            let isProtected = isPartOfCompletedFIVA(position) ? " 🔒" : ""
+            info += "  Position \(position) (\(card)): \(color.rawValue)\(isProtected)\n"
         }
         return info
     }
@@ -560,7 +922,9 @@ class GameStateManager: ObservableObject {
         
         clearAllHighlights()
         boardState.removeAll()
-        GameState.currentPlayer = 0
+        completedFIVAs.removeAll()
+        teamFIVACount.removeAll()
+        gameState.resetToFirstPlayer()
         
         // Start fresh game
         startNewGame()
@@ -584,11 +948,49 @@ class GameStateManager: ObservableObject {
         playCardOnBoard(card, position: position)
     }
     
+    /// Tests FIVA detection with a sample scenario
+    func testFIVADetection() {
+        print("🧪 GameStateManager: Testing FIVA Detection...")
+        
+        // Clear board
+        boardState.removeAll()
+        completedFIVAs.removeAll()
+        teamFIVACount.removeAll()
+        
+        // Create horizontal FIVA for red team (row 0, cols 0-4)
+        print("   Creating horizontal FIVA (Red)...")
+        for col in 0..<5 {
+            boardState[col] = .red
+        }
+        let hFivas = checkForNewFIVAs(at: 4, color: .red)
+        print("   ✅ Found \(hFivas.count) horizontal FIVA(s)")
+        
+        // Try vertical FIVA for blue team (col 5, rows 0-4)
+        print("   Creating vertical FIVA (Blue)...")
+        for row in 0..<5 {
+            boardState[row * 10 + 5] = .blue
+        }
+        let vFivas = checkForNewFIVAs(at: 45, color: .blue)
+        print("   ✅ Found \(vFivas.count) vertical FIVA(s)")
+        
+        // Try diagonal FIVA using corner wildcard
+        print("   Creating diagonal FIVA with corner wildcard (Green)...")
+        boardState[0] = .green  // Corner wildcard
+        boardState[11] = .green
+        boardState[22] = .green
+        boardState[33] = .green
+        boardState[44] = .green
+        let dFivas = checkForNewFIVAs(at: 44, color: .green)
+        print("   ✅ Found \(dFivas.count) diagonal FIVA(s)")
+        
+        print("\n" + getFIVADebugInfo())
+    }
+    
     /// Verifies game state integrity
     func verifyGameIntegrity() -> Bool {
         let deckIntegrity = deckManager.verifyDeckIntegrity()
         let handSize = currentPlayerCards.count
-        let expectedHandSize = GameState.cardsPerPlayer
+        let expectedHandSize = gameState.cardsPerPlayer
         
         let handValid = handSize <= expectedHandSize
         

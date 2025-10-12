@@ -58,24 +58,10 @@ enum AnchorPosition {
     case bottomLeft
 }
 
-// MARK: - Game State Variables
-struct GameState {
-    static var numPlayers: Int = 3  // Updated to match available chip colors (red, blue, green)
-    static var numTeams: Int = 2
-    static var currentPlayer: Int = 0
-    
-    // Cards dealt based on player count
-    static var cardsPerPlayer: Int {
-        switch numPlayers {
-        case 2: return 7
-        case 3, 4: return 6
-        case 5, 6: return 5
-        case 7, 8, 9: return 4
-        case 10, 11, 12: return 3
-        default: return 7
-        }
-    }
-}
+// MARK: - Layout Constants
+// GameState model now lives in Models/GameState.swift
+// Using max expected cards for layout calculations (6 cards for 3-4 player game)
+private let maxCardsPerPlayerForLayout: CGFloat = 6.0
 
 // MARK: - Overlay Layout Protocol
 protocol OverlayLayoutConstants {
@@ -201,7 +187,7 @@ struct PlayerHandLayoutConstants: OverlayLayoutConstants {
             .portrait: { bodyHeight, bodyWidth in
                 let topPadding: CGFloat = 0.89
                 let bottomPadding: CGFloat = 0.02
-                let cardsPerPlayer = CGFloat(GameState.cardsPerPlayer)
+                let cardsPerPlayer = maxCardsPerPlayerForLayout
                 
                 // Compute left/right padding using formula
                 let computedPadding = returnLeftAndRight(
@@ -222,7 +208,7 @@ struct PlayerHandLayoutConstants: OverlayLayoutConstants {
             .landscape: { bodyHeight, bodyWidth in
                 let leftPadding: CGFloat = 0.92
                 let rightPadding: CGFloat = 0.0
-                let cardsPerPlayer = CGFloat(GameState.cardsPerPlayer)
+                let cardsPerPlayer = maxCardsPerPlayerForLayout
                 
                 // Compute top/bottom padding using formula
                 let computedPadding = returnTopAndBottom(
@@ -245,7 +231,7 @@ struct PlayerHandLayoutConstants: OverlayLayoutConstants {
             .portrait: { bodyHeight, bodyWidth in
                 let leftPadding: CGFloat = 0.88
                 let rightPadding: CGFloat = 0.015
-                let cardsPerPlayer = CGFloat(GameState.cardsPerPlayer)
+                let cardsPerPlayer = maxCardsPerPlayerForLayout
                 
                 // Compute top/bottom padding using formula
                 let computedPadding = returnTopAndBottom(
@@ -266,7 +252,7 @@ struct PlayerHandLayoutConstants: OverlayLayoutConstants {
             .landscape: { bodyHeight, bodyWidth in
                 let leftPadding: CGFloat = 0.915
                 let rightPadding: CGFloat = 0.015
-                let cardsPerPlayer = CGFloat(GameState.cardsPerPlayer)
+                let cardsPerPlayer = maxCardsPerPlayerForLayout
                 
                 // Compute top/bottom padding using formula
                 let computedPadding = returnTopAndBottom(
@@ -289,7 +275,7 @@ struct PlayerHandLayoutConstants: OverlayLayoutConstants {
             .landscape: { bodyHeight, bodyWidth in
                 let leftPadding: CGFloat = 0.915
                 let rightPadding: CGFloat = 0.02
-                let cardsPerPlayer = CGFloat(GameState.cardsPerPlayer)
+                let cardsPerPlayer = maxCardsPerPlayerForLayout
                 
                 // Compute top/bottom padding using formula
                 let computedPadding = returnTopAndBottom(

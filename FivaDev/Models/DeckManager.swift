@@ -279,16 +279,19 @@ class DeckManager: ObservableObject {
     }
     
     /// Simulates dealing cards to players for testing
-    /// - Parameter playerCount: Number of players (2-12)
+    /// - Parameters:
+    ///   - playerCount: Number of players (2-12)
+    ///   - cardsPerPlayer: Cards to deal each player (optional, uses GameState calculation if nil)
     /// - Returns: Array of player hands
-    func simulateDealToPlayers(playerCount: Int) -> [[String]] {
-        let cardsPerPlayer = GameState.cardsPerPlayer
+    func simulateDealToPlayers(playerCount: Int, cardsPerPlayer: Int? = nil) -> [[String]] {
+        let gameState = GameState(numPlayers: playerCount)
+        let cardsEach = cardsPerPlayer ?? gameState.cardsPerPlayer
         var playerHands: [[String]] = []
         
-        print("🎴 DeckManager: Simulating deal to \(playerCount) players (\(cardsPerPlayer) cards each)...")
+        print("🎴 DeckManager: Simulating deal to \(playerCount) players (\(cardsEach) cards each)...")
         
         for playerIndex in 0..<playerCount {
-            let hand = drawCards(count: cardsPerPlayer)
+            let hand = drawCards(count: cardsEach)
             playerHands.append(hand)
             print("   Player \(playerIndex + 1): \(hand)")
         }

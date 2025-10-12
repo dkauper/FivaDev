@@ -452,7 +452,7 @@ final class GameStateManagerTests: XCTestCase {
     
     func testInitialization_DealsCards() {
         // Then
-        let expectedCards = GameState.cardsPerPlayer
+        let expectedCards = sut.gameState.cardsPerPlayer
         XCTAssertEqual(sut.currentPlayerCards.count, expectedCards, "Should deal \(expectedCards) cards")
         XCTAssertEqual(sut.deckManager.cardsRemaining, 104 - expectedCards, "Deck should decrease by dealt cards")
     }
@@ -497,14 +497,14 @@ final class GameStateManagerTests: XCTestCase {
     
     func testPlayCardOnBoard_AdvancesPlayer() {
         // Given
-        let initialPlayer = GameState.currentPlayer
+        let initialPlayer = sut.gameState.currentPlayer
         let cardToPlay = sut.currentPlayerCards[0]
         
         // When
         sut.playCardOnBoard(cardToPlay, position: 50)
         
         // Then
-        XCTAssertEqual(GameState.currentPlayer, (initialPlayer + 1) % GameState.numPlayers, "Should advance to next player")
+        XCTAssertEqual(sut.gameState.currentPlayer, (initialPlayer + 1) % sut.gameState.numPlayers, "Should advance to next player")
     }
     
     // MARK: - Discard Tests
@@ -546,8 +546,8 @@ final class GameStateManagerTests: XCTestCase {
         sut.startNewGame()
         
         // Then
-        XCTAssertEqual(sut.deckManager.cardsRemaining, 104 - GameState.cardsPerPlayer, "Deck should be reset and dealt")
-        XCTAssertEqual(sut.currentPlayerCards.count, GameState.cardsPerPlayer, "Should have correct hand size")
+        XCTAssertEqual(sut.deckManager.cardsRemaining, 104 - sut.gameState.cardsPerPlayer, "Deck should be reset and dealt")
+        XCTAssertEqual(sut.currentPlayerCards.count, sut.gameState.cardsPerPlayer, "Should have correct hand size")
         XCTAssertNil(sut.mostRecentDiscard, "Should clear discard state")
     }
     
