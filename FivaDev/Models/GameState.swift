@@ -87,8 +87,8 @@ struct GameState: Codable {
     ///   - playerTeams: Team assignments (optional, will auto-distribute if nil)
     ///   - currentPlayer: Starting player index
     init(
-        numPlayers: Int = 3,
-        numTeams: Int = 3,
+        numPlayers: Int = 2,
+        numTeams: Int = 2,
         playerNames: [String]? = nil,
         playerTeams: [Int]? = nil,
         currentPlayer: Int = 0

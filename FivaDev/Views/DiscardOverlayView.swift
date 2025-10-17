@@ -4,6 +4,7 @@
 //
 //  Simplified with center-body unified tooltip system
 //  Created by Doron Kauper on 9/21/25.
+//  Updated: October 12, 2025, 10:30 PM Pacific - Added FIVA score element with chip images
 //  Updated: October 11, 2025, 6:30 PM Pacific - Added current player chip element
 //
 
@@ -211,7 +212,13 @@ struct DiscardOverlayView: View {
                     height: height,
                     elementType: type
                 )
-            case .lastPlayer, .nextPlayer, .score, .timer:
+            case .score:
+                fivaScoreElement(
+                    width: width,
+                    height: height,
+                    elementType: type
+                )
+            case .lastPlayer, .nextPlayer, .timer:
                 sfSymbolElement(
                     elementType: type,
                     width: width,
@@ -400,6 +407,124 @@ struct DiscardOverlayView: View {
             }
             #endif
         }
+    }
+    
+    // MARK: - FIVA Score Element
+    private func fivaScoreElement(
+        width: CGFloat,
+        height: CGFloat,
+        elementType: DiscardElementType
+    ) -> some View {
+        let isActive = hoveredElements.contains(elementType) || touchedElements.contains(elementType)
+        
+        return ZStack {
+            RoundedRectangle(cornerRadius: 4)
+                .fill(Color.white.opacity(0.1))
+                .stroke(Color.green.opacity(0.8), lineWidth: 2)
+            
+            // Horizontal layout of chips with counts
+            VStack(spacing: width * 0.05) {
+                ForEach(PlayerColor.allCases, id: \.self) { color in
+                    let count = gameStateManager.teamFIVACount[color] ?? 0
+                    let hasWon = count >= gameStateManager.gameState.fivasToWin
+                    
+                    ZStack {
+                        // Chip image
+                        Image(color.chipImageName)
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: min(width * 0.5, height * 0.5))
+                        
+                        // Count overlay
+                        Text("\(count)")
+                            .font(.system(size: min(width * 0.12, height * 0.35), weight: .bold))
+                            .foregroundColor(.white)
+                            .shadow(color: .black.opacity(0.8), radius: 2, x: 0, y: 1)
+                        
+                        // Winner indicator
+                        if hasWon {
+                            Text("🏆")
+                                .font(.system(size: min(width * 0.1, height * 0.25)))
+                                .offset(x: width * 0.12, y: -height * 0.15)
+                        }
+                    }
+                }
+            }
+            .padding(width * 0.1)
+        }
+        .frame(width: width, height: height)
+        .glassEffect()
+        .scaleEffect(isActive ? 1.1 : 1.0)
+        .animation(.easeInOut(duration: 0.2), value: isActive)
+        #if os(macOS)
+        .help(fivaScoreTooltipText())
+        #endif
+        #if !os(tvOS)
+        .onHover { isHovering in
+            if isHovering {
+                hoveredElements.insert(elementType)
+                #if !os(macOS)
+                showTooltipFor = elementType
+                #endif
+            } else {
+                hoveredElements.remove(elementType)
+                if showTooltipFor == elementType {
+                    showTooltipFor = nil
+                }
+            }
+        }
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { _ in
+                    if !touchedElements.contains(elementType) {
+                        touchedElements.insert(elementType)
+                        #if canImport(UIKit)
+                        showTooltipFor = elementType
+                        #endif
+                    }
+                }
+                .onEnded { _ in
+                    touchedElements.remove(elementType)
+                    #if canImport(UIKit)
+                    if showTooltipFor == elementType {
+                        showTooltipFor = nil
+                    }
+                    #endif
+                }
+        )
+        #else
+        .focusable(true) { isFocused in
+            if isFocused {
+                hoveredElements.insert(elementType)
+                showTooltipFor = elementType
+            } else {
+                hoveredElements.remove(elementType)
+                if showTooltipFor == elementType {
+                    showTooltipFor = nil
+                }
+            }
+        }
+        #endif
+        .onChange(of: isActive) { _, newValue in
+            #if canImport(UIKit) && !os(tvOS)
+            if newValue {
+                let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+                impactFeedback.impactOccurred()
+            }
+            #endif
+        }
+    }
+    
+    private func fivaScoreTooltipText() -> String {
+        var text = "FIVA Status\n"
+        for color in PlayerColor.allCases {
+            let count = gameStateManager.teamFIVACount[color] ?? 0
+            let hasWon = count >= gameStateManager.gameState.fivasToWin
+            let marker = hasWon ? " 🏆" : ""
+            text += "\(color.displayName): \(count)\(marker)\n"
+        }
+        text += "Need: \(gameStateManager.gameState.fivasToWin) to win"
+        return text
     }
     
     // MARK: - SF Symbol Element

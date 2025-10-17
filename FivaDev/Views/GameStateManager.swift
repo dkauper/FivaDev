@@ -3,6 +3,10 @@
 //  FivaDev
 //
 //  Created by Doron Kauper on 9/18/25.
+//  Updated: October 12, 2025, 11:59 PM Pacific - Added dead card auto-detection with tooltip
+//  Updated: October 12, 2025, 11:40 PM Pacific - Two-eyed Jacks show no highlights (wild placement)
+//  Updated: October 12, 2025, 11:35 PM Pacific - Fixed one-eyed Jack highlighting (position-based)
+//  Updated: October 12, 2025, 11:20 PM Pacific - Integrated Jack special rules with CardPlayValidator
 //  Updated: October 12, 2025, 9:50 PM Pacific - Added 5-in-a-row detection system
 //  Updated: October 12, 2025, 1:30 PM Pacific - Added multi-player hand tracking
 //  Updated: October 12, 2025, 6:10 PM Pacific - Refactored to use GameState model
@@ -32,6 +36,12 @@ struct CompletedFIVA: Equatable {
     }
 }
 
+/// Represents a dead card notification for UI display
+struct DeadCardNotification: Equatable {
+    let cardName: String
+    let timestamp: Date = Date()
+}
+
 // MARK: - GameStateManager
 
 @MainActor
@@ -39,7 +49,8 @@ class GameStateManager: ObservableObject {
     // MARK: - Game Configuration
     
     /// Game configuration (will be set by pre-game dialog in future)
-    @Published var gameState: GameState = .threePlayer {
+//    @Published var gameState: GameState = .threePlayer {
+        @Published var gameState: GameState = GameState(numPlayers: 3, numTeams: 3) {
         didSet {
             // Sync player names when game state changes
             updatePlayerNames()
@@ -62,6 +73,13 @@ class GameStateManager: ObservableObject {
     var currentLayout: [String] {
         return BoardLayouts.getLayout(currentLayoutType)
     }
+    
+    /// Audio manager for game sounds
+    @Published var audioManager = AudioManager()
+
+    /// Win state tracking
+    @Published var winningTeam: PlayerColor? = nil
+    @Published var showWinOverlay: Bool = false
     
     // MARK: - Deck Management
     
@@ -94,6 +112,7 @@ class GameStateManager: ObservableObject {
     // MARK: - Game State
     
     @Published var highlightedCards: Set<String> = []
+    @Published var highlightedPositions: Set<Int> = []  // For one-eyed Jack targeting
     
     /// Index of selected card in player's hand (for placement)
     @Published var selectedCardIndex: Int? = nil
@@ -113,6 +132,9 @@ class GameStateManager: ObservableObject {
     @Published var mostRecentDiscard: String? = nil
     @Published var lastCardPlayed: String? = nil
     @Published var currentPlayerName: String = "Player 1"
+    
+    /// Dead card notification state (for tooltip display)
+    @Published var deadCardNotification: DeadCardNotification? = nil
     
     // Track the current highlighting state to prevent rapid state changes
     private var highlightingTimeouts: [String: Task<Void, Never>] = [:]
@@ -287,7 +309,7 @@ class GameStateManager: ObservableObject {
     
     // MARK: - Card Operations
     
-    /// Plays a card on the board at the specified position
+    /// Plays a card on the board at the specified position with Jack rule validation
     /// - Parameters:
     ///   - cardName: The card being played
     ///   - position: Board position (0-99)
@@ -298,29 +320,40 @@ class GameStateManager: ObservableObject {
             return
         }
         
-        // Validate position matches card (unless it's a two-eyed Jack)
-        let isTwoEyedJack = cardName == "J♥" || cardName == "J♦"
-        if !isTwoEyedJack {
-            let validPositions = getBoardPositions(for: cardName)
-            guard validPositions.contains(position) else {
-                print("⚠️ GameStateManager: Position \(position) doesn't match card \(cardName)")
-                return
-            }
-        }
+        // Validate play using Jack-aware validator
+        let validationResult = validateCardPlay(cardName, at: position)
         
-        // Check if position is already occupied (unless corner)
-        if !isCornerPosition(position) && isPositionOccupied(position) {
-            print("⚠️ GameStateManager: Position \(position) already occupied")
+        guard case .valid(let action) = validationResult else {
+            if let error = validationResult.errorMessage {
+                print("⚠️ GameStateManager: \(error)")
+            }
             return
         }
         
-        // Get current player's color based on their team
-        let playerColor = gameState.colorFor(player: gameState.currentPlayer)
+        let playerColor = currentPlayerColor
         
-        // Place chip on board
-        if placeChip(at: position, color: playerColor) {
-            // Check for completed FIVAs
-            let newFIVAs = checkForNewFIVAs(at: position, color: playerColor)
+        // Execute the validated action
+        switch action {
+        case .placeChip(let pos):
+            // Place chip on board
+            if placeChip(at: pos, color: playerColor) {
+                handleSuccessfulPlay(cardName: cardName, cardIndex: cardIndex, position: pos)
+            }
+            
+        case .removeChip(let pos):
+            // Remove opponent's chip (one-eyed Jack)
+            if removeChip(at: pos) {
+                print("🃏 GameStateManager: One-eyed Jack removed opponent chip at position \(pos)")
+                handleSuccessfulPlay(cardName: cardName, cardIndex: cardIndex, position: pos)
+            }
+        }
+    }
+    
+    /// Handles post-play actions after successful card play
+    private func handleSuccessfulPlay(cardName: String, cardIndex: Int, position: Int) {
+        // Check for completed FIVAs (only if chip was placed, not removed)
+        if let chipColor = boardState[position] {
+            let newFIVAs = checkForNewFIVAs(at: position, color: chipColor)
             if !newFIVAs.isEmpty {
                 print("🎉 GameStateManager: Completed \(newFIVAs.count) FIVA(s)!")
                 
@@ -329,30 +362,30 @@ class GameStateManager: ObservableObject {
                     print("🏆 GameStateManager: GAME OVER! \(winner.rawValue) team wins!")
                 }
             }
-            
-            // Remove card from player's hand
-            currentPlayerCards.remove(at: cardIndex)
-            
-            // Mark card as in play on board
-            deckManager.placeOnBoard(cardName)
-            
-            // Update last card played and discard overlay
-            lastCardPlayed = cardName
-            mostRecentDiscard = cardName  // Show played card in discard overlay
-            
-            // Draw replacement card
-            if let newCard = deckManager.drawCard() {
-                currentPlayerCards.append(newCard)
-                print("🎴 GameStateManager: Drew replacement card \(newCard)")
-            } else {
-                print("⚠️ GameStateManager: No cards available to draw")
-            }
-            
-            // Advance to next player
-            advanceToNextPlayer()
-            
-            print("✅ GameStateManager: Played \(cardName) at position \(position)")
         }
+        
+        // Remove card from player's hand
+        currentPlayerCards.remove(at: cardIndex)
+        
+        // Mark card as in play or discarded
+        deckManager.placeOnBoard(cardName)
+        
+        // Update last card played
+        lastCardPlayed = cardName
+        mostRecentDiscard = cardName
+        
+        // Draw replacement card
+        if let newCard = deckManager.drawCard() {
+            currentPlayerCards.append(newCard)
+            print("🎴 GameStateManager: Drew replacement card \(newCard)")
+        } else {
+            print("⚠️ GameStateManager: No cards available to draw")
+        }
+        
+        // Advance to next player
+        advanceToNextPlayer()
+        
+        print("✅ GameStateManager: Played \(cardName) at position \(position)")
     }
     
     /// Discards a dead card (both board positions occupied)
@@ -586,6 +619,18 @@ class GameStateManager: ObservableObject {
         }
     }
     
+    /// Gets the FIVA color for a position if it's part of a completed FIVA
+    /// - Parameter position: Board position (0-99)
+    /// - Returns: PlayerColor if position is part of a FIVA, nil otherwise
+    func getFIVAColor(at position: Int) -> PlayerColor? {
+        for fiva in completedFIVAs {
+            if fiva.positions.contains(position) {
+                return fiva.color
+            }
+        }
+        return nil
+    }
+    
     // MARK: - Win Condition Check
     
     /// Checks if any team has won the game
@@ -596,11 +641,25 @@ class GameStateManager: ObservableObject {
         for (color, count) in teamFIVACount {
             if count >= fivasNeeded {
                 print("🏆 GameStateManager: \(color.rawValue) WINS with \(count) FIVA(s)!")
+                
+                // ⭐️ NEW: Trigger win celebration
+                winningTeam = color
+                showWinOverlay = true
+                audioManager.playCrowdCheer()
+                
                 return color
             }
         }
         
         return nil
+    }
+    
+    /// Dismisses win overlay and starts new game
+    func dismissWinOverlay() {
+        showWinOverlay = false
+        winningTeam = nil
+        audioManager.stopAudio()
+        resetGameState()
     }
     
     // MARK: - Player Management
@@ -635,7 +694,7 @@ class GameStateManager: ObservableObject {
     
     // MARK: - Card Selection
     
-    /// Selects a card from the player's hand
+    /// Selects a card from the player's hand with dead card detection
     /// - Parameter index: Index of the card in the hand
     func selectCard(at index: Int) {
         guard index >= 0 && index < currentPlayerCards.count else {
@@ -643,8 +702,31 @@ class GameStateManager: ObservableObject {
             return
         }
         
-        selectedCardIndex = index
         let cardName = currentPlayerCards[index]
+        
+        // ⚡️ DEAD CARD DETECTION: Auto-discard if both positions occupied
+        if isDeadCard(cardName) {
+            print("💀 GameStateManager: Dead card detected: \(cardName)")
+            
+            // Show notification
+            deadCardNotification = DeadCardNotification(cardName: cardName)
+            
+            // Auto-discard and replace
+            discardDeadCard(cardName)
+            
+            // Clear notification after 2 seconds
+            Task { @MainActor in
+                try? await Task.sleep(nanoseconds: 2_000_000_000)
+                if deadCardNotification?.cardName == cardName {
+                    deadCardNotification = nil
+                }
+            }
+            
+            return
+        }
+        
+        // Normal selection flow
+        selectedCardIndex = index
         print("🎴 GameStateManager: Selected card \(cardName) at index \(index)")
         print("   Valid positions will be highlighted...")
         
@@ -668,30 +750,12 @@ class GameStateManager: ObservableObject {
         return currentPlayerCards[index]
     }
     
-    /// Highlights valid positions for a card
+    /// Highlights valid positions for a card (Jack-aware)
     private func highlightValidPositions(for cardName: String) {
         clearAllHighlights()
         
-        // Two-eyed Jacks can be placed anywhere
-        let isTwoEyedJack = cardName == "J♥" || cardName == "J♦"
-        
-        if isTwoEyedJack {
-            // Highlight all empty positions
-            for position in 0..<100 {
-                if !isPositionOccupied(position) || isCornerPosition(position) {
-                    highlightedCards.insert(currentLayout[position])
-                }
-            }
-        } else {
-            // Highlight positions matching this card
-            let positions = getBoardPositions(for: cardName)
-            for position in positions {
-                if !isPositionOccupied(position) || isCornerPosition(position) {
-                    highlightedCards.insert(cardName)
-                    break  // Only need to highlight the card type once
-                }
-            }
-        }
+        // Use the CardPlayValidator extension method
+        highlightValidPositionsForCard(cardName)
     }
     
     /// Attempts to play the selected card at the specified position
@@ -723,7 +787,24 @@ class GameStateManager: ObservableObject {
         return true
     }
     
-    // MARK: - Legacy Methods (Deprecated - Use playCardOnBoard/discardDeadCard instead)
+    // MARK: - Card Playability Helpers
+    
+    /// Checks if a card can be played at any position on the board
+    /// - Parameter cardName: Card to check
+    /// - Returns: True if card has at least one valid position
+    func canPlayCard(_ cardName: String) -> Bool {
+        let validPositions = getValidPositions(for: cardName)
+        return !validPositions.isEmpty
+    }
+    
+    /// Gets all positions where a card could be played
+    /// - Parameter cardName: Card to check
+    /// - Returns: Array of valid position indices
+    func getPlayablePositions(for cardName: String) -> [Int] {
+        return Array(getValidPositions(for: cardName)).sorted()
+    }
+    
+    // MARK: - Legacy Methods (Deprecated - Use new methods instead)
     
     /// Legacy method - use playCardOnBoard instead
     @available(*, deprecated, message: "Use playCardOnBoard(_:position:) instead")
@@ -776,6 +857,13 @@ class GameStateManager: ObservableObject {
     /// Checks if a board position should be highlighted
     func shouldHighlight(position: Int) -> Bool {
         guard position >= 0 && position < currentLayout.count else { return false }
+        
+        // Check position-based highlighting (one-eyed Jacks)
+        if highlightedPositions.contains(position) {
+            return true
+        }
+        
+        // Check card-based highlighting (normal cards, two-eyed Jacks)
         let cardAtPosition = currentLayout[position]
         return highlightedCards.contains(cardAtPosition)
     }
@@ -800,8 +888,9 @@ class GameStateManager: ObservableObject {
         }
         highlightingTimeouts.removeAll()
         
-        // Clear highlighted cards
+        // Clear highlighted cards and positions
         highlightedCards.removeAll()
+        highlightedPositions.removeAll()
     }
     
     // MARK: - Hand Management Helpers
@@ -814,6 +903,17 @@ class GameStateManager: ObservableObject {
     /// Gets specific player's hand
     func getPlayerHand(_ playerIndex: Int) -> [String] {
         return playerHands[playerIndex] ?? []
+    }
+    
+    // MARK: - Dead Card Tooltip
+    
+    /// Gets tooltip content for dead card notification
+    func deadCardTooltipContent() -> TooltipContent? {
+        guard let notification = deadCardNotification else { return nil }
+        return TooltipContent(
+            title: "Dead Card: \(notification.cardName)",
+            description: "Both board positions occupied\nCard discarded and replaced"
+        )
     }
     
     // MARK: - Debug Methods
@@ -840,7 +940,8 @@ class GameStateManager: ObservableObject {
         🎴 Current Hand: \(currentPlayerCards)
         🎯 Chips Placed: \(boardState.count) positions occupied
         🏆 FIVAs to Win: \(gameState.fivasToWin)
-        ✨ Highlighted: \(Array(highlightedCards).sorted())
+        ✨ Highlighted Cards: \(Array(highlightedCards).sorted())
+        ✨ Highlighted Positions: \(Array(highlightedPositions).sorted())
         🎯 Last Played: \(lastCardPlayed ?? "None")
         🗑️ Last Discard: \(mostRecentDiscard ?? "None")
         ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -897,6 +998,7 @@ class GameStateManager: ObservableObject {
     func getHighlightingDebugInfo() -> String {
         return """
         Highlighted Cards: \(Array(highlightedCards).sorted())
+        Highlighted Positions: \(Array(highlightedPositions).sorted())
         Active Timeouts: \(highlightingTimeouts.keys.count)
         Player Cards: \(currentPlayerCards)
         Current Player: \(currentPlayerName)

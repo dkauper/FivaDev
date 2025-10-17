@@ -22,7 +22,7 @@ struct HeaderView: View {
                     print("🔄 HeaderView: Restart button tapped")
                     gameStateManager.resetGameState()
                 }) {
-                    Image(systemName: "repeat")
+                    Image(systemName: "repeat.circle")
                         .symbolRenderingMode(.palette)
                         .foregroundStyle(.red, .blue)
                         .font(.largeTitle)
@@ -30,9 +30,9 @@ struct HeaderView: View {
                 .buttonStyle(.plain) // Removes default button styling
                 .padding(.leading, 18)
                 
-                Image(systemName: "speaker.slash")
+                Image(systemName: "speaker.slash.fill")
                     .symbolRenderingMode(.palette)
-                    .foregroundStyle(.red, .blue)
+                    .foregroundStyle(.blue, .red)
                     .font(.largeTitle)
                     .padding(.leading, 18)
                 Spacer()
@@ -64,17 +64,22 @@ struct HeaderView: View {
                 Text("Fiva")
                     .font(.title.bold())
                     .bold()
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(.blue)
             }
             
             HStack{
                 Spacer()
+                // Setup icon with palette rendering
+                Image(systemName: "gear")
+                    .symbolRenderingMode(.palette)
+                    .foregroundStyle(.red, .blue)
+                    .font(.largeTitle)
+                    .padding(.trailing)
                 // Help icon with palette rendering
                 Image(systemName: "questionmark.circle")
                     .symbolRenderingMode(.palette)
                     .foregroundStyle(.red, .blue)
                     .font(.largeTitle)
-//                    .padding(.trailing)
             }
             .padding(.horizontal)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)

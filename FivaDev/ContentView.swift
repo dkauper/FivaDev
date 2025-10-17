@@ -3,6 +3,7 @@
 //  FivaDev
 //
 //  Created by Doron Kauper on 9/16/25.
+//  Updated: October 12, 2025, 10:00 PM Pacific - Added TestControlsView for FIVA debugging
 //  Updated: October 11, 2025, 6:45 PM Pacific - Added GameStateManager to HeaderView
 //  Optimized: October 3, 2025, 4:35 PM Pacific - Removed unused geometry parameter
 //
@@ -32,6 +33,12 @@ struct ContentView: View {
                 HeaderView()
                     .frame(height: headerHeight)
                     .environmentObject(gameStateManager)
+                
+                // Development Controls (hidden in production builds)
+                #if DEBUG
+                TestControlsView()
+                    .environmentObject(gameStateManager)
+                #endif
                 
                 // Body Section
                 BodyView(

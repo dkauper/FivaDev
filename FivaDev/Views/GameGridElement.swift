@@ -3,6 +3,7 @@
 //  FivaDev
 //
 //  Created by Doron Kauper on 9/17/25.
+//  Updated: October 12, 2025, 10:40 PM Pacific - Added FIVA border visualization
 //  Updated: October 11, 2025, 5:45 PM Pacific - Fixed chip persistence on rotation
 //  Updated: October 11, 2025, 5:25 PM Pacific - Added chip rendering
 //  Updated: October 5, 2025, 1:40 PM Pacific - Uses dynamic layout from GameStateManager
@@ -44,6 +45,8 @@ struct GameGridElement: View {
         let isHighlighted = gameStateManager.shouldHighlight(position: position)
         // CRITICAL: Direct access to boardState to force view updates on chip changes
         let chipState = gameStateManager.boardState[position]
+        // NEW: Check if part of completed FIVA
+        let fivaColor = gameStateManager.getFIVAColor(at: position)
         
         ElevatedCard(
             width: width,
@@ -69,6 +72,18 @@ struct GameGridElement: View {
                         color: color,
                         size: min(width, height) * 0.85  // 85% of card size for better visibility
                     )
+                }
+                
+                // FIVA border overlay (if part of completed FIVA)
+                if let fivaColor = fivaColor {
+                    RoundedRectangle(cornerRadius: 4)
+                        .stroke(fivaColor.color, lineWidth: 4)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 4)
+                                .stroke(fivaColor.color.opacity(0.3), lineWidth: 8)
+                        )
+                        .shadow(color: fivaColor.color.opacity(0.5), radius: 4, x: 0, y: 0)
+                        .allowsHitTesting(false)  // Don't block taps
                 }
             }
         }
@@ -119,6 +134,24 @@ struct ChipView: View {
     
     return GameGridElement(
         position: 0,
+        width: 60,
+        height: 60,
+        orientation: .portrait
+    )
+    .environmentObject(manager)
+    .padding()
+}
+
+#Preview("FIVA Border - Red") {
+    let manager = GameStateManager()
+    // Create horizontal FIVA
+    for col in 0..<5 {
+        manager.placeChip(at: col, color: .red)
+    }
+    _ = manager.checkForNewFIVAs(at: 4, color: .red)
+    
+    return GameGridElement(
+        position: 2,  // Middle of FIVA
         width: 60,
         height: 60,
         orientation: .portrait
@@ -187,3 +220,20 @@ struct ChipView: View {
     .environmentObject(GameStateManager())
     .padding()
 }
+
+// ============================================
+// TESTING & VERIFICATION
+// ============================================
+/*
+1. Run app and click "Test Detection"
+2. Observe borders appear:
+   - 🔴 Red border on positions 0-4 (horizontal)
+   - 🔵 Blue border on positions 5,15,25,35,45 (vertical)
+   - 🟢 Green border on positions 0,11,22,33,44 (diagonal)
+3. Borders have:
+   - 4px solid colored line
+   - 8px translucent outer glow
+   - Colored shadow for depth
+4. Try removing chip from FIVA - blocked
+5. Borders persist during continued play
+*/
