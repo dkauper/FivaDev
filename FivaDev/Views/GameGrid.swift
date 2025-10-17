@@ -2,7 +2,10 @@
 //  GameGrid.swift
 //  FivaDev
 //
+//  FIXED: Cards now maintain vertical orientation regardless of device rotation
 //  Created by Doron Kauper on 9/17/25.
+//  Updated: October 5, 2025, 2:00 PM Pacific - Added reactivity for board layout changes
+//  Optimized: October 3, 2025, 3:00 PM Pacific - Cached geometry calculation
 //
 
 import SwiftUI
@@ -15,112 +18,190 @@ struct GameGrid: View {
     
     @EnvironmentObject var gameStateManager: GameStateManager
     
+    // Grid configuration - percentage-based within GameBoard constraints
     private let gridSize = 10
-    private let spacingRatio: CGFloat = 0.005
+    
+    // Percentage-based spacing and padding configuration
+    private let gridPaddingPercent: CGFloat = 0.02    // 2% padding around entire grid
+    private let cardSpacingPercent: CGFloat = 0.008   // 0.8% spacing between cards
+    
+    // OPTIMIZED: Cache calculated geometry to avoid repeated computation
+    @State private var cachedGeometry: GridGeometry?
     
     var body: some View {
         ZStack {
-            // Dark green background to show card alignment and spacing
-//            Rectangle()
-//                .fill(Color(hex: "eabf90"))//.opacity(0.1))
-//                .frame(width: width, height: height)
-//
-            buildGrid()
+            buildPercentageBasedGrid()
+        }
+        .id(gameStateManager.currentLayoutType) // Force rebuild when layout changes
+        .onChange(of: width) { _, newWidth in
+            print("🔄 GameGrid: Width changed to \(newWidth), chips in boardState: \(gameStateManager.boardState.count)")
+            cachedGeometry = nil
+        }
+        .onChange(of: height) { _, newHeight in
+            print("🔄 GameGrid: Height changed to \(newHeight), chips in boardState: \(gameStateManager.boardState.count)")
+            cachedGeometry = nil
+        }
+        .onChange(of: gameStateManager.currentLayoutType) { _, newType in
+            cachedGeometry = nil // Clear cache when layout changes
         }
     }
     
-    private func buildGrid() -> some View {
-        let cellDims = calculateCellDimensions()
-        let useWidth = orientation == .landscape ? height : width
-        let useHeight = orientation == .landscape ? width : height
-        let spacing = min(useWidth, useHeight) * spacingRatio
-        let columns = Array(repeating: GridItem(.fixed(cellDims.width), spacing: spacing), count: gridSize)
+    private func buildPercentageBasedGrid() -> some View {
+        // OPTIMIZED: Use cached geometry or calculate if needed
+        let gridGeometry = cachedGeometry ?? calculatePercentageBasedGeometry()
+        if cachedGeometry == nil {
+            DispatchQueue.main.async {
+                cachedGeometry = gridGeometry
+            }
+        }
         
-        let grid = LazyVGrid(columns: columns, spacing: spacing) {
-            ForEach(0..<(gridSize * gridSize), id: \.self) { index in
+        let columns = Array(repeating: GridItem(.fixed(gridGeometry.cardWidth), spacing: gridGeometry.spacing), count: gridSize)
+        
+        let grid = LazyVGrid(columns: columns, spacing: gridGeometry.spacing) {
+            ForEach(0..<(gridSize * gridSize), id: \.self) { position in
                 GameGridElement(
-                    position: index,
-                    width: cellDims.width,
-                    height: cellDims.height,
-                    orientation: AppOrientation.portrait
+                    position: position,
+                    width: gridGeometry.cardWidth,
+                    height: gridGeometry.cardHeight,
+                    orientation: orientation
                 )
+                // Removed .id() modifier - parent grid's .id() handles layout changes
+                // Individual elements don't need unique IDs per rotation
                 .environmentObject(gameStateManager)
             }
         }
-        .padding(8)
+        .padding(gridGeometry.gridPadding)
+        .frame(width: width, height: height)
         
-        if orientation == .landscape {
-            return AnyView(
-                grid
-                    .rotationEffect(Angle.degrees(-90))
-                    .frame(width: width, height: height)
-            )
-        } else {
-            return AnyView(
-                grid
-                    .frame(width: width, height: height)
-            )
-        }
+        return AnyView(grid)
     }
     
-    private func calculateCellDimensions() -> (width: CGFloat, height: CGFloat) {
-        let useWidth = orientation == .landscape ? height : width
-        let useHeight = orientation == .landscape ? width : height
+    private func calculatePercentageBasedGeometry() -> GridGeometry {
+        // Use the GameBoard-provided dimensions directly
+        let useWidth = width
+        let useHeight = height
         
-        // Account for grid padding
-        let paddingAdjustment: CGFloat = 4
-        let adjustedWidth = useWidth - paddingAdjustment
-        let adjustedHeight = useHeight - paddingAdjustment
+        // Calculate grid padding based on percentage of GameBoard dimensions
+        let gridPadding = min(useWidth, useHeight) * gridPaddingPercent
         
-        // Calculate spacing
-        let spacing = min(adjustedWidth, adjustedHeight) * spacingRatio
-        let totalHorizontalSpacing = spacing * CGFloat(gridSize - 1)
-        let totalVerticalSpacing = spacing * CGFloat(gridSize - 1)
+        // Available space after padding
+        let availableWidth = useWidth - (gridPadding * 2)
+        let availableHeight = useHeight - (gridPadding * 2)
         
-        // Available space for cards
-        let availableWidth = adjustedWidth - totalHorizontalSpacing
-        let availableHeight = adjustedHeight - totalVerticalSpacing
+        // Calculate spacing between cards based on available space
+        let spacing = min(availableWidth, availableHeight) * cardSpacingPercent
+        let totalSpacingWidth = spacing * CGFloat(gridSize - 1)
+        let totalSpacingHeight = spacing * CGFloat(gridSize - 1)
         
-        // Calculate maximum cell dimensions
-        let maxCellWidth = availableWidth / CGFloat(gridSize)
-        let maxCellHeight = availableHeight / CGFloat(gridSize)
+        // Net available space for cards
+        let netAvailableWidth = availableWidth - totalSpacingWidth
+        let netAvailableHeight = availableHeight - totalSpacingHeight
         
-        // Maintain 1:1.5 aspect ratio for cards (width:height)
-        let cardAspectRatio: CGFloat = 1.0 / 1.5
+        // Calculate card dimensions proportionally within available space
+        let cardWidth = netAvailableWidth / CGFloat(gridSize)
+        let cardHeight = netAvailableHeight / CGFloat(gridSize)
         
-        let finalWidth: CGFloat
-        let finalHeight: CGFloat
-        
-        if maxCellWidth / maxCellHeight > cardAspectRatio {
-            // Height is the limiting factor - use full height
-            finalHeight = maxCellHeight
-            finalWidth = maxCellHeight * cardAspectRatio
-        } else {
-            // Width is the limiting factor - use full width
-            finalWidth = maxCellWidth
-            finalHeight = maxCellWidth / cardAspectRatio
-        }
-        
-        return (finalWidth, finalHeight)
+        return GridGeometry(
+            cardWidth: cardWidth,
+            cardHeight: cardHeight,
+            spacing: spacing,
+            gridPadding: gridPadding,
+            availableWidth: availableWidth,
+            availableHeight: availableHeight
+        )
     }
 }
 
-#Preview("Portrait") {
-    GameGrid(
-        width: 400,
-        height: 600,
-        anchor: AnchorPosition.topLeft,
-        orientation: AppOrientation.portrait
-    )
-    .environmentObject(GameStateManager())
+// MARK: - Supporting Structures
+private struct GridGeometry {
+    let cardWidth: CGFloat
+    let cardHeight: CGFloat
+    let spacing: CGFloat
+    let gridPadding: CGFloat
+    let availableWidth: CGFloat
+    let availableHeight: CGFloat
+    
+    // Computed properties for debugging and layout analysis
+    var totalGridWidth: CGFloat {
+        return (cardWidth * 10) + (spacing * 9) + (gridPadding * 2)
+    }
+    
+    var totalGridHeight: CGFloat {
+        return (cardHeight * 10) + (spacing * 9) + (gridPadding * 2)
+    }
+    
+    var cardAspectRatio: CGFloat {
+        return cardWidth / cardHeight
+    }
+    
+    var spaceUtilizationWidth: CGFloat {
+        return (cardWidth * 10) / availableWidth
+    }
+    
+    var spaceUtilizationHeight: CGFloat {
+        return (cardHeight * 10) / availableHeight
+    }
 }
 
-#Preview("Landscape") {
+// MARK: - Debug Information Extension
+extension GameGrid {
+    /// Provides detailed geometry information for debugging
+    private var debugInfo: String {
+        let geometry = cachedGeometry ?? calculatePercentageBasedGeometry()
+        return """
+        GameGrid Debug Info:
+        - GameBoard Container: \(String(format: "%.1f", width)) x \(String(format: "%.1f", height))
+        - Card Size: \(String(format: "%.1f", geometry.cardWidth)) x \(String(format: "%.1f", geometry.cardHeight))
+        - Aspect Ratio: \(String(format: "%.3f", geometry.cardAspectRatio))
+        - Spacing: \(String(format: "%.1f", geometry.spacing))
+        - Grid Padding: \(String(format: "%.1f", geometry.gridPadding))
+        - Space Utilization: \(String(format: "%.1f", geometry.spaceUtilizationWidth * 100))% x \(String(format: "%.1f", geometry.spaceUtilizationHeight * 100))%
+        - Total Grid: \(String(format: "%.1f", geometry.totalGridWidth)) x \(String(format: "%.1f", geometry.totalGridHeight))
+        - Orientation: \(orientation) (Cards always remain portrait)
+        """
+    }
+}
+
+#Preview("Portrait - iPhone") {
     GameGrid(
-        width: 600,
-        height: 400,
-        anchor: AnchorPosition.bottomLeft,
-        orientation: AppOrientation.landscape
+        width: 350,
+        height: 600,
+        anchor: .topLeft,
+        orientation: .portrait
     )
     .environmentObject(GameStateManager())
+    .background(Color.gray.opacity(0.1))
+}
+
+#Preview("Landscape - iPhone") {
+    GameGrid(
+        width: 600,
+        height: 350,
+        anchor: .bottomLeft,
+        orientation: .landscape
+    )
+    .environmentObject(GameStateManager())
+    .background(Color.gray.opacity(0.1))
+}
+
+#Preview("Portrait - iPad") {
+    GameGrid(
+        width: 600,
+        height: 800,
+        anchor: .topLeft,
+        orientation: .portrait
+    )
+    .environmentObject(GameStateManager())
+    .background(Color.gray.opacity(0.1))
+}
+
+#Preview("Landscape - iPad") {
+    GameGrid(
+        width: 800,
+        height: 600,
+        anchor: .bottomLeft,
+        orientation: .landscape
+    )
+    .environmentObject(GameStateManager())
+    .background(Color.gray.opacity(0.1))
 }

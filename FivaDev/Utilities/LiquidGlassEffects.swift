@@ -318,8 +318,8 @@ struct PlayerHandGlassEffect: ViewModifier {
                 return isExpanded ? .crystalline : .standard
             case .mac:
                 return .frosted
-            case .appleTV:
-                return .dramatic
+//            case .appleTV:
+//                return .dramatic
             }
         }()
         
@@ -350,8 +350,6 @@ struct DiscardOverlayGlassEffect: ViewModifier {
                 return .crystalline
             case (.mac, _):
                 return .holographic
-            case (.appleTV, _):
-                return .dramatic
             }
         }()
         

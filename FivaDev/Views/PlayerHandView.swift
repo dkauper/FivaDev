@@ -2,9 +2,10 @@
 //  PlayerHandView.swift
 //  FivaDev
 //
-//  Enhanced with new layout system compatibility
+//  Fixed: Layout constants now update on first render
 //  Created by Doron Kauper on 9/18/25.
-//  Updated: September 22, 2025, 2:45 PM
+//  Updated: October 6, 2025, 10:15 PM Pacific - Fixed initial layout calculation
+//  Optimized: October 3, 2025, 4:45 PM Pacific - Added dimension validation
 //
 
 import SwiftUI
@@ -19,100 +20,113 @@ struct PlayerHandView: View {
     @State private var hoveredCardIndex: Int? = nil
     @State private var touchedCardIndex: Int? = nil
     
-    // Use the enhanced layout system (no longer need to pass playerHandConstants)
+    // FIXED: Computed properties instead of @State - ensures fresh calculation on every render
     private var playerHandConstants: PlayerHandLayoutConstants {
         PlayerHandLayoutConstants.current(
+            for: DeviceType.current,
+            orientation: orientation,
+            bodyHeight: bodyHeight,
+            bodyWidth: bodyWidth
+        )
+    }
+    
+    private var cardLayoutConstants: PlayerHandCardLayoutConstants {
+        PlayerHandCardLayoutConstants.current(
             for: DeviceType.current,
             orientation: orientation
         )
     }
     
-    // Sample cards for the current player (will be replaced with actual game state)
     private var playerCards: [String] {
         return gameStateManager.currentPlayerCards
     }
     
+    // Helper to ensure valid dimensions
+    private func validDimension(_ value: CGFloat) -> CGFloat {
+        guard value.isFinite && value > 0 else { return 1 }
+        return value
+    }
+    
     var body: some View {
-        // Use the new protocol methods instead of the old specific method names
         let topPadding = playerHandConstants.topValue(bodyHeight)
         let bottomPadding = playerHandConstants.bottomValue(bodyHeight)
         let leftPadding = playerHandConstants.leftValue(bodyWidth)
         let rightPadding = playerHandConstants.rightValue(bodyWidth)
         
-        // Use convenience methods for cleaner code
         let handWidth = playerHandConstants.overlayWidth(bodyWidth)
         let handHeight = playerHandConstants.overlayHeight(bodyHeight)
         
         VStack(spacing: 0) {
-            // Top padding
-            Spacer()
-                .frame(height: topPadding)
+            Spacer().frame(height: validDimension(topPadding))
             
             HStack(spacing: 0) {
-                // Left padding
-                Spacer()
-                    .frame(width: leftPadding)
-                
-                // Player hand overlay
+                Spacer().frame(width: validDimension(leftPadding))
                 playerHandOverlay(width: handWidth, height: handHeight)
-                
-                // Right padding
-                Spacer()
-                    .frame(width: rightPadding)
+                Spacer().frame(width: validDimension(rightPadding))
             }
             
-            // Bottom padding
-            Spacer()
-                .frame(height: bottomPadding)
+            Spacer().frame(height: validDimension(bottomPadding))
         }
         .frame(width: bodyWidth, height: bodyHeight)
     }
     
     private func playerHandOverlay(width: CGFloat, height: CGFloat) -> some View {
-        let overlayPadding: CGFloat = 8
+        // Validate input dimensions
+        let safeWidth = validDimension(width)
+        let safeHeight = validDimension(height)
+        let overlayPadding = cardLayoutConstants.overlayPadding(overlayWidth: safeWidth, overlayHeight: safeHeight)
         
         return cardsGridContainer(
-            availableWidth: width - (overlayPadding * 2),
-            availableHeight: height - (overlayPadding * 2)
+            availableWidth: max(1, safeWidth - (overlayPadding * 2)),
+            availableHeight: max(1, safeHeight - (overlayPadding * 2))
         )
         .padding(overlayPadding)
         .background(
-            RoundedRectangle(cornerRadius: 12)
+            RoundedRectangle(cornerRadius: cardLayoutConstants.overlayCornerRadius(overlayWidth: width))
                 .fill(.ultraThinMaterial)
                 .stroke(.red.opacity(0.6), lineWidth: 2)
         )
-        .frame(width: width, height: height)
+        .frame(width: safeWidth, height: safeHeight)
     }
     
     private func cardsGridContainer(availableWidth: CGFloat, availableHeight: CGFloat) -> some View {
-        GeometryReader { geometry in
-            flexibleCardsGrid(
-                availableWidth: availableWidth,
-                availableHeight: availableHeight
-            )
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-    
-    private func flexibleCardsGrid(availableWidth: CGFloat, availableHeight: CGFloat) -> some View {
-        let gridDimensions = calculateFlexibleGrid(
-            for: playerCards.count,
+        fixedSizeCardsGrid(
             availableWidth: availableWidth,
             availableHeight: availableHeight
         )
+    }
+    
+    // OPTIMIZED: Unified layout using AnyLayout (reduces ~40 lines of duplicate code)
+    private func fixedSizeCardsGrid(availableWidth: CGFloat, availableHeight: CGFloat) -> some View {
+        // Validate input dimensions
+        let safeWidth = validDimension(availableWidth)
+        let safeHeight = validDimension(availableHeight)
+        let cardCount = max(1, CGFloat(playerCards.count))
+        let spacing = cardLayoutConstants.cardSpacing(availableWidth: safeWidth, columns: playerCards.count)
+        let useHorizontalLayout = safeWidth > safeHeight
         
-        let columns = Array(
-            repeating: GridItem(.flexible(minimum: gridDimensions.cardWidth, maximum: gridDimensions.cardWidth),
-                               spacing: gridDimensions.spacing),
-            count: gridDimensions.columns
-        )
+        // Calculate card dimensions based on layout direction with validation
+        let (cardWidth, cardHeight): (CGFloat, CGFloat)
+        if useHorizontalLayout {
+            let totalSpacing = spacing * (cardCount - 1)
+            cardWidth = max(1, (safeWidth - totalSpacing) / cardCount)
+            cardHeight = max(1, safeHeight)
+        } else {
+            let totalSpacing = spacing * (cardCount - 1)
+            cardWidth = max(1, safeWidth)
+            cardHeight = max(1, (safeHeight - totalSpacing) / cardCount)
+        }
         
-        return LazyVGrid(columns: columns, spacing: gridDimensions.spacing) {
+        // Use AnyLayout to dynamically switch between HStack and VStack
+        let layout = useHorizontalLayout ? AnyLayout(HStackLayout(spacing: spacing))
+                                         : AnyLayout(VStackLayout(spacing: spacing))
+        
+        return layout {
             ForEach(Array(playerCards.enumerated()), id: \.offset) { index, card in
                 playerCardView(
                     cardName: card,
-                    width: gridDimensions.cardWidth,
-                    height: gridDimensions.cardHeight,
+                    width: cardWidth,
+                    height: cardHeight,
                     index: index
                 )
             }
@@ -123,76 +137,70 @@ struct PlayerHandView: View {
     private func playerCardView(cardName: String, width: CGFloat, height: CGFloat, index: Int) -> some View {
         let isHovered = hoveredCardIndex == index
         let isTouched = touchedCardIndex == index
+        let isSelected = gameStateManager.selectedCardIndex == index
         let isActive = isHovered || isTouched
+        let cardData = PlayingCardData.parse(from: cardName)
+        
+        // Validate dimensions before rendering
+        let validWidth = validDimension(width)
+        let validHeight = validDimension(height)
         
         return ZStack {
-            // Card background
-            RoundedRectangle(cornerRadius: 4)
-                .fill(Color.white.opacity(0.3))
-                .stroke(Color.green.opacity(1), lineWidth: 2)
+            RoundedRectangle(cornerRadius: cardLayoutConstants.cardCornerRadius(cardWidth: validWidth))
+                .fill(Color.white.opacity(0.1))
+                .stroke(isSelected ? Color.yellow : Color.green, lineWidth: isSelected ? 3 : 2)
             
-            // Card image
-            Image(cardName)
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-                .clipShape(RoundedRectangle(cornerRadius: 3))
-                .padding(1)
+            UnifiedPlayingCardView(
+                cardData: cardData,
+                width: validWidth,
+                height: validHeight,
+                orientation: .portrait,
+                cardPadding: cardLayoutConstants.cardInternalPadding
+            )
+            .padding(cardLayoutConstants.cardInternalPadding)
         }
-        .frame(width: width, height: height)
+        .frame(width: validWidth, height: validHeight)
         .glassEffect()
         .scaleEffect(isActive ? 1.1 : 1.0)
         .animation(.easeInOut(duration: 0.2), value: isActive)
         .overlay(
-            // Subtle border highlight when active
-            RoundedRectangle(cornerRadius: 4)
+            RoundedRectangle(cornerRadius: cardLayoutConstants.cardCornerRadius(cardWidth: validWidth))
                 .stroke(Color.blue.opacity(isActive ? 0.4 : 0), lineWidth: 1)
                 .animation(.easeInOut(duration: 0.2), value: isActive)
         )
         #if !os(tvOS)
-        .onHover { isHovering in
-            // Immediate state update for responsiveness
-            hoveredCardIndex = isHovering ? index : nil
-            
-            // Use async to ensure proper timing for game state updates
-            Task { @MainActor in
-                gameStateManager.highlightCard(cardName, highlight: isHovering)
-            }
+        .onTapGesture {
+            print("🎴 HAND TAP: Card \(cardName) at index \(index)")
+            playCard(at: index)
         }
-        .simultaneousGesture(
+        .onHover { isHovering in
+            hoveredCardIndex = isHovering ? index : nil
+            gameStateManager.highlightCard(cardName, highlight: isHovering)
+        }
+        .gesture(
             DragGesture(minimumDistance: 0)
                 .onChanged { _ in
-                    // Touch/press started
                     if touchedCardIndex != index {
                         touchedCardIndex = index
-                        Task { @MainActor in
-                            gameStateManager.highlightCard(cardName, highlight: true)
-                        }
+                        gameStateManager.highlightCard(cardName, highlight: true)
                     }
                 }
                 .onEnded { _ in
-                    // Touch/press ended
                     touchedCardIndex = nil
-                    Task { @MainActor in
-                        gameStateManager.highlightCard(cardName, highlight: false)
-                    }
+                    gameStateManager.highlightCard(cardName, highlight: false)
                 }
         )
         #else
-        // tvOS: Use focus-based interaction
         .focusable(true) { isFocused in
-            // Focus-based highlighting for Apple TV
             hoveredCardIndex = isFocused ? index : nil
-            Task { @MainActor in
-                gameStateManager.highlightCard(cardName, highlight: isFocused)
-            }
+            gameStateManager.highlightCard(cardName, highlight: isFocused)
         }
-        #endif
         .onTapGesture {
-            // Handle card selection/play with enhanced feedback
+            print("🎴 HAND TAP: Card \(cardName) at index \(index)")
             playCard(at: index)
         }
+        #endif
         .onChange(of: isActive) { _, newValue in
-            // Enhanced haptic feedback on iOS when card becomes active
             #if canImport(UIKit) && !os(tvOS)
             if newValue {
                 let impactFeedback = UIImpactFeedbackGenerator(style: .light)
@@ -202,95 +210,18 @@ struct PlayerHandView: View {
         }
     }
     
-    private func calculateFlexibleGrid(for cardCount: Int, availableWidth: CGFloat, availableHeight: CGFloat) -> (columns: Int, cardWidth: CGFloat, cardHeight: CGFloat, spacing: CGFloat) {
-        let aspectRatio: CGFloat = 1.0 / 1.5 // Card aspect ratio (width:height)
-        let minSpacing: CGFloat = 4
-        let minCardWidth: CGFloat = 20
-        let minCardHeight: CGFloat = 30
-        
-        // Try different column counts to find the best fit
-        var bestFit: (columns: Int, cardWidth: CGFloat, cardHeight: CGFloat, spacing: CGFloat)?
-        var bestCardArea: CGFloat = 0
-        
-        // Test column counts from 1 to the number of cards (max 8)
-        let maxColumns = min(cardCount, 8)
-        
-        for columns in 1...maxColumns {
-            let rows = Int(ceil(Double(cardCount) / Double(columns)))
-            
-            // Calculate spacing - use more space for fewer cards
-            let spacing = max(minSpacing, min(12, availableWidth / CGFloat(columns * 4)))
-            
-            // Calculate total space used by spacing
-            let totalHorizontalSpacing = spacing * CGFloat(max(0, columns - 1))
-            let totalVerticalSpacing = spacing * CGFloat(max(0, rows - 1))
-            
-            // Calculate available space for cards
-            let availableCardWidth = (availableWidth - totalHorizontalSpacing) / CGFloat(columns)
-            let availableCardHeight = (availableHeight - totalVerticalSpacing) / CGFloat(rows)
-            
-            // Determine actual card size based on aspect ratio
-            let cardWidth: CGFloat
-            let cardHeight: CGFloat
-            
-            if availableCardWidth / availableCardHeight > aspectRatio {
-                // Height is the limiting factor
-                cardHeight = max(minCardHeight, availableCardHeight)
-                cardWidth = max(minCardWidth, cardHeight * aspectRatio)
-            } else {
-                // Width is the limiting factor
-                cardWidth = max(minCardWidth, availableCardWidth)
-                cardHeight = max(minCardHeight, cardWidth / aspectRatio)
-            }
-            
-            // Check if this layout fits within bounds
-            let totalRequiredWidth = (cardWidth * CGFloat(columns)) + totalHorizontalSpacing
-            let totalRequiredHeight = (cardHeight * CGFloat(rows)) + totalVerticalSpacing
-            
-            if totalRequiredWidth <= availableWidth && totalRequiredHeight <= availableHeight {
-                let cardArea = cardWidth * cardHeight
-                if cardArea > bestCardArea {
-                    bestCardArea = cardArea
-                    bestFit = (columns: columns, cardWidth: cardWidth, cardHeight: cardHeight, spacing: spacing)
-                }
-            }
-        }
-        
-        // Return best fit or sensible fallback
-        if let best = bestFit {
-            return best
-        } else {
-            // Fallback: single row if possible, otherwise single column
-            let singleRowCardWidth = (availableWidth - (minSpacing * CGFloat(cardCount - 1))) / CGFloat(cardCount)
-            if singleRowCardWidth >= minCardWidth {
-                let cardHeight = min(availableHeight, singleRowCardWidth / aspectRatio)
-                let finalCardWidth = min(singleRowCardWidth, cardHeight * aspectRatio)
-                return (columns: cardCount, cardWidth: finalCardWidth, cardHeight: cardHeight, spacing: minSpacing)
-            } else {
-                // Single column fallback
-                let cardWidth = min(availableWidth, minCardWidth * 2)
-                let cardHeight = min(availableHeight / CGFloat(cardCount), cardWidth / aspectRatio)
-                return (columns: 1, cardWidth: cardWidth, cardHeight: cardHeight, spacing: minSpacing)
-            }
-        }
-    }
-    
     private func playCard(at index: Int) {
-        // Enhanced card playing logic with visual feedback
         let cardName = playerCards[index]
-        print("Playing card: \(cardName) at index \(index)")
+        print("Selecting card: \(cardName) at index \(index)")
         
-        // Add visual feedback for card selection
         withAnimation(.spring(duration: 0.3)) {
-            // Could add temporary effects here like removing from hand
+            // Select the card - this will highlight valid board positions
+            gameStateManager.selectCard(at: index)
         }
-        
-        // TODO: Implement actual card playing logic
-        // This will integrate with the game state management
     }
 }
 
-// MARK: - Enhanced Preview Support
+// MARK: - Preview Support
 #Preview("iPhone Portrait") {
     GeometryReader { geometry in
         let deviceType = DeviceType.iPhone

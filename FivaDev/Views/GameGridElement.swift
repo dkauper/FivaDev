@@ -3,6 +3,12 @@
 //  FivaDev
 //
 //  Created by Doron Kauper on 9/17/25.
+//  Updated: October 12, 2025, 10:40 PM Pacific - Added FIVA border visualization
+//  Updated: October 11, 2025, 5:45 PM Pacific - Fixed chip persistence on rotation
+//  Updated: October 11, 2025, 5:25 PM Pacific - Added chip rendering
+//  Updated: October 5, 2025, 1:40 PM Pacific - Uses dynamic layout from GameStateManager
+//  Optimized: October 3, 2025, 3:00 PM Pacific - Reduced environment object lookups
+//  Refactored to use SharedPlayingCardComponents
 //
 
 import SwiftUI
@@ -15,83 +21,219 @@ struct GameGridElement: View {
     
     @EnvironmentObject var gameStateManager: GameStateManager
     
-    // Card distribution for the 10x10 grid (100 positions, 0-99)
-    private let cardDistribution = [
-        "RedJoker", "6D", "7D", "8D", "9D", "10D", "QD", "KD", "AD", "BlackJoker",
-        "5D", "3H", "2H", "2S", "3S", "4S", "5S", "6S", "7S", "AC",
-        "4D", "4H", "KD", "AD", "AC", "KC", "QC", "10C", "8S", "KC",
-        "3D", "5H", "QD", "QH", "10H", "9H", "8H", "9C", "9S", "QC",
-        "2D", "6H", "10D", "KH", "3H", "2H", "7H", "8C", "10S", "10C",
-        "AS", "7H", "9D", "AH", "4H", "5H", "6H", "7C", "QS", "9C",
-        "KS", "8H", "8D", "2C", "3C", "4C", "5C", "6C", "KS", "8C",
-        "QS", "9H", "7D", "6D", "5D", "4D", "3D", "2D", "AS", "7C",
-        "10S", "10H", "QH", "KH", "AH", "2C", "3C", "4C", "5C", "6C",
-        "BlackJoker", "9S", "8S", "7S", "6S", "5S", "4S", "3S", "2S", "RedJoker"
-    ]
-    
     private var cardName: String {
+        let cardDistribution = gameStateManager.currentLayout
         guard position >= 0 && position < cardDistribution.count else {
-            return "BlueBack" // Fallback
+            return "BlueBack"
         }
         return cardDistribution[position]
     }
     
+    private var cardData: PlayingCardData {
+        return PlayingCardData.parse(from: cardName)
+    }
+    
+    // OPTIMIZED: Computed property to reduce environment object lookups
+    private var cardOpacity: Double {
+        let isHighlighted = gameStateManager.shouldHighlight(position: position)
+        let hasAnyHighlights = !gameStateManager.highlightedCards.isEmpty
+        return isHighlighted ? 1.0 : (hasAnyHighlights ? 0.7 : 1.0)
+    }
+    
     var body: some View {
+        // OPTIMIZED: Cache environment lookups once per render
+        let isHighlighted = gameStateManager.shouldHighlight(position: position)
+        // CRITICAL: Direct access to boardState to force view updates on chip changes
+        let chipState = gameStateManager.boardState[position]
+        // NEW: Check if part of completed FIVA
+        let fivaColor = gameStateManager.getFIVAColor(at: position)
+        
         ElevatedCard(
             width: width,
             height: height,
-            isHighlighted: gameStateManager.shouldHighlight(position: position),
-            highlightScale: 1.5, // Your preferred 50% increase
+            isHighlighted: isHighlighted,
+            highlightScale: 1.5,
             zIndex: Double(position),
             highlightZIndex: 10000
         ) {
-            #if canImport(UIKit)
-            if let cardImage = UIImage(named: cardName) {
-                Image(uiImage: cardImage)
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-            } else {
-                // Fallback if image not found
-                VStack {
-                    Text(cardName)
-                        .font(.caption2)
-                        .foregroundColor(.black)
-                        .multilineTextAlignment(.center)
-                    Text("\(position)")
-                        .font(.caption2)
-                        .foregroundColor(.gray)
+            ZStack {
+                // Card background
+                UnifiedPlayingCardView(
+                    cardData: cardData,
+                    width: width,
+                    height: height,
+                    orientation: orientation
+                )
+                
+                // Chip overlay (if position is occupied)
+                // Using chipState directly ensures view updates when boardState changes
+                if let color = chipState {
+                    ChipView(
+                        color: color,
+                        size: min(width, height) * 0.85  // 85% of card size for better visibility
+                    )
                 }
-                .padding(2)
+                
+                // FIVA border overlay (if part of completed FIVA)
+                if let fivaColor = fivaColor {
+                    RoundedRectangle(cornerRadius: 4)
+                        .stroke(fivaColor.color, lineWidth: 4)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 4)
+                                .stroke(fivaColor.color.opacity(0.3), lineWidth: 8)
+                        )
+                        .shadow(color: fivaColor.color.opacity(0.5), radius: 4, x: 0, y: 0)
+                        .allowsHitTesting(false)  // Don't block taps
+                }
             }
-            #else
-            Image(cardName)
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-            #endif
         }
-        .opacity(gameStateManager.shouldHighlight(position: position) ? 1.0 :
-                (gameStateManager.highlightedCards.isEmpty ? 1.0 : 0.7))
+        .opacity(cardOpacity)
+        .onTapGesture {
+            handleTap()
+        }
+    }
+    
+    // MARK: - Tap Handling
+    
+    private func handleTap() {
+        print("🎯 BOARD TAP: Position \(position) (\(cardName))")
+        // Play the selected card at this position
+        gameStateManager.playSelectedCard(at: position)
     }
 }
 
-#Preview("Card 0 - Red Joker") {
+// MARK: - Chip View Component
+struct ChipView: View {
+    let color: PlayerColor
+    let size: CGFloat
+    
+    var body: some View {
+        Image(color.chipImageName)
+            .resizable()
+            .scaledToFit()
+            .frame(width: size, height: size)
+            .shadow(color: .black.opacity(0.3), radius: 3, x: 0, y: 2)
+    }
+}
+
+// MARK: - Previews
+#Preview("Red Joker") {
     GameGridElement(
         position: 0,
-        width: 40,
+        width: 60,
         height: 60,
-        orientation: AppOrientation.portrait
+        orientation: .portrait
     )
     .environmentObject(GameStateManager())
     .padding()
 }
 
-#Preview("Card 50 - AS") {
-    GameGridElement(
-        position: 50,
-        width: 40,
+#Preview("Red Joker with Chip") {
+    let manager = GameStateManager()
+    manager.placeChip(at: 0, color: .red)
+    
+    return GameGridElement(
+        position: 0,
+        width: 60,
         height: 60,
-        orientation: AppOrientation.portrait
+        orientation: .portrait
+    )
+    .environmentObject(manager)
+    .padding()
+}
+
+#Preview("FIVA Border - Red") {
+    let manager = GameStateManager()
+    // Create horizontal FIVA
+    for col in 0..<5 {
+        manager.placeChip(at: col, color: .red)
+    }
+    _ = manager.checkForNewFIVAs(at: 4, color: .red)
+    
+    return GameGridElement(
+        position: 2,  // Middle of FIVA
+        width: 60,
+        height: 60,
+        orientation: .portrait
+    )
+    .environmentObject(manager)
+    .padding()
+}
+
+#Preview("King of Diamonds - Portrait") {
+    GameGridElement(
+        position: 7,
+        width: 60,
+        height: 60,
+        orientation: .portrait
     )
     .environmentObject(GameStateManager())
     .padding()
 }
+
+#Preview("King of Diamonds with Blue Chip") {
+    let manager = GameStateManager()
+    manager.placeChip(at: 7, color: .blue)
+    
+    return GameGridElement(
+        position: 7,
+        width: 60,
+        height: 60,
+        orientation: .portrait
+    )
+    .environmentObject(manager)
+    .padding()
+}
+
+#Preview("Two of Hearts - Portrait") {
+    GameGridElement(
+        position: 12,
+        width: 60,
+        height: 60,
+        orientation: .portrait
+    )
+    .environmentObject(GameStateManager())
+    .padding()
+}
+
+#Preview("Five of Diamonds with Green Chip") {
+    let manager = GameStateManager()
+    manager.placeChip(at: 1, color: .green)
+    
+    return GameGridElement(
+        position: 1,
+        width: 60,
+        height: 60,
+        orientation: .portrait
+    )
+    .environmentObject(manager)
+    .padding()
+}
+
+#Preview("Three of Clubs - Landscape") {
+    GameGridElement(
+        position: 63,
+        width: 60,
+        height: 60,
+        orientation: .landscape
+    )
+    .environmentObject(GameStateManager())
+    .padding()
+}
+
+// ============================================
+// TESTING & VERIFICATION
+// ============================================
+/*
+1. Run app and click "Test Detection"
+2. Observe borders appear:
+   - 🔴 Red border on positions 0-4 (horizontal)
+   - 🔵 Blue border on positions 5,15,25,35,45 (vertical)
+   - 🟢 Green border on positions 0,11,22,33,44 (diagonal)
+3. Borders have:
+   - 4px solid colored line
+   - 8px translucent outer glow
+   - Colored shadow for depth
+4. Try removing chip from FIVA - blocked
+5. Borders persist during continued play
+*/

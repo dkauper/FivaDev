@@ -3,6 +3,9 @@
 //  FivaDev
 //
 //  Created by Doron Kauper on 9/16/25.
+//  Updated: October 12, 2025, 10:00 PM Pacific - Added TestControlsView for FIVA debugging
+//  Updated: October 11, 2025, 6:45 PM Pacific - Added GameStateManager to HeaderView
+//  Optimized: October 3, 2025, 4:35 PM Pacific - Removed unused geometry parameter
 //
 
 import SwiftUI
@@ -26,16 +29,23 @@ struct ContentView: View {
                 .ignoresSafeArea()
             
             VStack(spacing: 0) {
-                // Header Section
+                // Header Section - Now receives GameStateManager for restart functionality
                 HeaderView()
                     .frame(height: headerHeight)
+                    .environmentObject(gameStateManager)
+                
+                // Development Controls (hidden in production builds)
+                #if DEBUG
+                TestControlsView()
+                    .environmentObject(gameStateManager)
+                #endif
+                
                 // Body Section
                 BodyView(
                     width: bodyWidth,
                     height: bodyHeight,
                     layoutConstants: layoutConstants,
-                    orientation: orientation,
-                    geometry: geometry
+                    orientation: orientation
                 )
                 .frame(width: bodyWidth, height: bodyHeight)
                 .environmentObject(gameStateManager)

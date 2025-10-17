@@ -2,9 +2,9 @@
 //  Globals.swift
 //  FivaDev
 //
-//  Cleaned up with Discard Overlay constants moved to unified configuration system
+//  Enhanced with Player Hand Card Layout Configuration System
 //  Created by Doron Kauper on 9/17/25.
-//  Updated: September 22, 2025, 3:50 PM PST
+//  Updated: October 10, 2025, 7:01 PM Pacific - Dynamic padding calculations
 //
 
 import SwiftUI
@@ -18,11 +18,10 @@ import AppKit
 #endif
 
 // MARK: - Device Type Detection
-enum DeviceType {
+enum DeviceType: Hashable {
     case iPhone
     case iPad
     case mac
-    case appleTV
     
     static var current: DeviceType {
         #if os(iOS)
@@ -37,8 +36,6 @@ enum DeviceType {
         #endif
         #elseif os(macOS)
         return .mac
-        #elseif os(tvOS)
-        return .appleTV
         #else
         return .iPhone // fallback
         #endif
@@ -46,7 +43,7 @@ enum DeviceType {
 }
 
 // MARK: - Orientation Detection
-enum AppOrientation {
+enum AppOrientation: Hashable {
     case portrait
     case landscape
     
@@ -61,26 +58,12 @@ enum AnchorPosition {
     case bottomLeft
 }
 
-// MARK: - Game State Variables
-struct GameState {
-    static var numPlayers: Int = 2
-    static var numTeams: Int = 2
-    static var currentPlayer: Int = 0
-    
-    // Cards dealt based on player count (from CLAUDE.md section 4)
-    static var cardsPerPlayer: Int {
-        switch numPlayers {
-        case 2: return 7
-        case 3, 4: return 6
-        case 5, 6: return 5
-        case 7, 8, 9: return 4
-        case 10, 11, 12: return 3
-        default: return 7
-        }
-    }
-}
+// MARK: - Layout Constants
+// GameState model now lives in Models/GameState.swift
+// Using max expected cards for layout calculations (6 cards for 3-4 player game)
+private let maxCardsPerPlayerForLayout: CGFloat = 6.0
 
-// MARK: - Overlay Layout Protocol for Future Consistency
+// MARK: - Overlay Layout Protocol
 protocol OverlayLayoutConstants {
     var topPadding: CGFloat { get }
     var bottomPadding: CGFloat { get }
@@ -92,18 +75,88 @@ protocol OverlayLayoutConstants {
     func leftValue(_ containerWidth: CGFloat) -> CGFloat
     func rightValue(_ containerWidth: CGFloat) -> CGFloat
     
-    static func current(for deviceType: DeviceType, orientation: AppOrientation) -> Self
+    static func current(for deviceType: DeviceType, orientation: AppOrientation, bodyHeight: CGFloat, bodyWidth: CGFloat) -> Self
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// MARK: - Player Hand Layout Constants (PRESERVED ORIGINAL VALUES)
-struct PlayerHandLayoutConstants: OverlayLayoutConstants {
-    let topPadding: CGFloat      // Previously: playerHandTop
-    let bottomPadding: CGFloat   // Previously: playerHandBottom
-    let leftPadding: CGFloat     // Previously: playerHandLeft
-    let rightPadding: CGFloat    // Previously: playerHandRight
+// MARK: - Player Hand Card Layout Constants
+struct PlayerHandCardLayoutConstants {
+    let overlayPaddingPercent: CGFloat
+    let cardSpacingPercent: CGFloat
+    let minCardSpacing: CGFloat
+    let maxCardSpacing: CGFloat
+    let overlayCornerRadiusPercent: CGFloat
+    let cardCornerRadiusPercent: CGFloat
+    let cardInternalPadding: CGFloat
     
-    // Protocol implementation - new standardized methods
+    func overlayPadding(overlayWidth: CGFloat, overlayHeight: CGFloat) -> CGFloat {
+        return min(overlayWidth, overlayHeight) * overlayPaddingPercent
+    }
+    
+    func cardSpacing(availableWidth: CGFloat, columns: Int) -> CGFloat {
+        let calculatedSpacing = availableWidth * cardSpacingPercent
+        return max(minCardSpacing, min(maxCardSpacing, calculatedSpacing))
+    }
+    
+    func overlayCornerRadius(overlayWidth: CGFloat) -> CGFloat {
+        return overlayWidth * overlayCornerRadiusPercent
+    }
+    
+    func cardCornerRadius(cardWidth: CGFloat) -> CGFloat {
+        return cardWidth * cardCornerRadiusPercent
+    }
+    
+    // OPTIMIZED: Pre-computed cache for O(1) lookup
+    private static let layoutCache: [DeviceType: [AppOrientation: PlayerHandCardLayoutConstants]] = [
+        .iPhone: [
+            .portrait: PlayerHandCardLayoutConstants(
+                overlayPaddingPercent: 0.02, cardSpacingPercent: 0.02,
+                minCardSpacing: 4, maxCardSpacing: 12,
+                overlayCornerRadiusPercent: 0.03, cardCornerRadiusPercent: 0.05,
+                cardInternalPadding: 2
+            ),
+            .landscape: PlayerHandCardLayoutConstants(
+                overlayPaddingPercent: 0.025, cardSpacingPercent: 0.07,
+                minCardSpacing: 3, maxCardSpacing: 10,
+                overlayCornerRadiusPercent: 0.04, cardCornerRadiusPercent: 0.05,
+                cardInternalPadding: 1.5
+            )
+        ],
+        .iPad: [
+            .portrait: PlayerHandCardLayoutConstants(
+                overlayPaddingPercent: 0.03, cardSpacingPercent: 0.015,
+                minCardSpacing: 6, maxCardSpacing: 16,
+                overlayCornerRadiusPercent: 0.025, cardCornerRadiusPercent: 0.05,
+                cardInternalPadding: 3
+            ),
+            .landscape: PlayerHandCardLayoutConstants(
+                overlayPaddingPercent: 0.035, cardSpacingPercent: 0.018,
+                minCardSpacing: 6, maxCardSpacing: 18,
+                overlayCornerRadiusPercent: 0.03, cardCornerRadiusPercent: 0.05,
+                cardInternalPadding: 3
+            )
+        ],
+        .mac: [
+            .landscape: PlayerHandCardLayoutConstants(
+                overlayPaddingPercent: 0.04, cardSpacingPercent: 0.02,
+                minCardSpacing: 8, maxCardSpacing: 20,
+                overlayCornerRadiusPercent: 0.025, cardCornerRadiusPercent: 0.05,
+                cardInternalPadding: 4
+            )
+        ]
+    ]
+    
+    static func current(for deviceType: DeviceType, orientation: AppOrientation) -> PlayerHandCardLayoutConstants {
+        layoutCache[deviceType]?[orientation] ?? layoutCache[.iPhone]![.portrait]!
+    }
+}
+
+// MARK: - Player Hand Layout Constants
+struct PlayerHandLayoutConstants: OverlayLayoutConstants {
+    let topPadding: CGFloat
+    let bottomPadding: CGFloat
+    let leftPadding: CGFloat
+    let rightPadding: CGFloat
+    
     func topValue(_ containerHeight: CGFloat) -> CGFloat {
         return topPadding * containerHeight
     }
@@ -120,7 +173,6 @@ struct PlayerHandLayoutConstants: OverlayLayoutConstants {
         return rightPadding * containerWidth
     }
     
-    // Convenience methods for overlay dimensions
     func overlayWidth(_ bodyWidth: CGFloat) -> CGFloat {
         return bodyWidth - leftValue(bodyWidth) - rightValue(bodyWidth)
     }
@@ -129,89 +181,143 @@ struct PlayerHandLayoutConstants: OverlayLayoutConstants {
         return bodyHeight - topValue(bodyHeight) - bottomValue(bodyHeight)
     }
     
-    // EXACT ORIGINAL VALUES FROM YOUR WORKING IMPLEMENTATION
-    static func current(for deviceType: DeviceType, orientation: AppOrientation) -> PlayerHandLayoutConstants {
-        switch (deviceType, orientation) {
-        case (.iPhone, .portrait):
-            return PlayerHandLayoutConstants(
-                topPadding: 0.9,      // 89% padding from top of BodyView
-                bottomPadding: 0.0,   // 1% padding from bottom of BodyView
-                leftPadding: 0.02,     // 2% padding from left side of BodyView
-                rightPadding: 0.02     // 2% padding from right side of BodyView
-            )
-        case (.iPhone, .landscape):
-            return PlayerHandLayoutConstants(
-                topPadding: 0.05,      // 5% padding from top of BodyView
-                bottomPadding: 0.0,    // 0% padding from bottom of BodyView
-                leftPadding: 0.85,     // 85% padding from left side of BodyView
-                rightPadding: 0.0      // 0% padding from right side of BodyView
-            )
-        case (.iPad, .portrait):
-            return PlayerHandLayoutConstants(
-                topPadding: 0.1,       // 10% padding from top of BodyView
-                bottomPadding: 0.1,    // 10% padding from bottom of BodyView
-                leftPadding: 0.87,     // 87% padding from left side of BodyView
-                rightPadding: 0.03     // 3% padding from right side of BodyView
-            )
-        case (.iPad, .landscape):
-            return PlayerHandLayoutConstants(
-                topPadding: 0.07,      // 5% padding from top of BodyView
-                bottomPadding: 0.07,   // 5% padding from bottom of BodyView
-                leftPadding: 0.92,     // 5% padding from left side of BodyView
-                rightPadding: 0.01     // 25% padding from right side of BodyView
-            )
-        case (.mac, .landscape):
-            return PlayerHandLayoutConstants(
-                topPadding: 0.06,      // 5% padding from top of BodyView
-                bottomPadding: 0.06,   // 5% padding from bottom of BodyView
-                leftPadding: 0.915,    // 5% padding from left side of BodyView
-                rightPadding: 0.02     // 55% padding from right side of BodyView
-            )
-        case (.appleTV, .landscape):
-            return PlayerHandLayoutConstants(
-                topPadding: 0.08,      // 8% padding from top of BodyView
-                bottomPadding: 0.0,    // 8% padding from bottom of BodyView
-                leftPadding: 0.9,      // 5% padding from left side of BodyView
-                rightPadding: 0.02     // 20% padding from right side of BodyView
-            )
-        default:
-            return PlayerHandLayoutConstants(
-                topPadding: 0.10,
-                bottomPadding: 0.15,
-                leftPadding: 0.05,
-                rightPadding: 0.05
-            )
+    // OPTIMIZED: Dynamic calculation cache using closures for computed padding values
+    private static let layoutCache: [DeviceType: [AppOrientation: (CGFloat, CGFloat) -> PlayerHandLayoutConstants]] = [
+        .iPhone: [
+            .portrait: { bodyHeight, bodyWidth in
+                let topPadding: CGFloat = 0.89
+                let bottomPadding: CGFloat = 0.02
+                let cardsPerPlayer = maxCardsPerPlayerForLayout
+                
+                // Compute left/right padding using formula
+                let computedPadding = returnLeftAndRight(
+                    bodyHeight: bodyHeight,
+                    bodyWidth: bodyWidth,
+                    topPadding: topPadding,
+                    bottomPadding: bottomPadding,
+                    cardsPerPlayer: cardsPerPlayer
+                )
+                
+                return PlayerHandLayoutConstants(
+                    topPadding: topPadding,
+                    bottomPadding: bottomPadding,
+                    leftPadding: computedPadding,
+                    rightPadding: computedPadding
+                )
+            },
+            .landscape: { bodyHeight, bodyWidth in
+                let leftPadding: CGFloat = 0.92
+                let rightPadding: CGFloat = 0.0
+                let cardsPerPlayer = maxCardsPerPlayerForLayout
+                
+                // Compute top/bottom padding using formula
+                let computedPadding = returnTopAndBottom(
+                    bodyHeight: bodyHeight,
+                    bodyWidth: bodyWidth,
+                    leftPadding: leftPadding,
+                    rightPadding: rightPadding,
+                    cardsPerPlayer: cardsPerPlayer
+                )
+                
+                return PlayerHandLayoutConstants(
+                    topPadding: computedPadding,
+                    bottomPadding: computedPadding,
+                    leftPadding: leftPadding,
+                    rightPadding: rightPadding
+                )
+            }
+        ],
+        .iPad: [
+            .portrait: { bodyHeight, bodyWidth in
+                let leftPadding: CGFloat = 0.88
+                let rightPadding: CGFloat = 0.015
+                let cardsPerPlayer = maxCardsPerPlayerForLayout
+                
+                // Compute top/bottom padding using formula
+                let computedPadding = returnTopAndBottom(
+                    bodyHeight: bodyHeight,
+                    bodyWidth: bodyWidth,
+                    leftPadding: leftPadding,
+                    rightPadding: rightPadding,
+                    cardsPerPlayer: cardsPerPlayer
+                )
+                
+                return PlayerHandLayoutConstants(
+                    topPadding: computedPadding,
+                    bottomPadding: computedPadding,
+                    leftPadding: leftPadding,
+                    rightPadding: rightPadding
+                )
+            },
+            .landscape: { bodyHeight, bodyWidth in
+                let leftPadding: CGFloat = 0.915
+                let rightPadding: CGFloat = 0.015
+                let cardsPerPlayer = maxCardsPerPlayerForLayout
+                
+                // Compute top/bottom padding using formula
+                let computedPadding = returnTopAndBottom(
+                    bodyHeight: bodyHeight,
+                    bodyWidth: bodyWidth,
+                    leftPadding: leftPadding,
+                    rightPadding: rightPadding,
+                    cardsPerPlayer: cardsPerPlayer
+                )
+                
+                return PlayerHandLayoutConstants(
+                    topPadding: computedPadding,
+                    bottomPadding: computedPadding,
+                    leftPadding: leftPadding,
+                    rightPadding: rightPadding
+                )
+            }
+        ],
+        .mac: [
+            .landscape: { bodyHeight, bodyWidth in
+                let leftPadding: CGFloat = 0.915
+                let rightPadding: CGFloat = 0.02
+                let cardsPerPlayer = maxCardsPerPlayerForLayout
+                
+                // Compute top/bottom padding using formula
+                let computedPadding = returnTopAndBottom(
+                    bodyHeight: bodyHeight,
+                    bodyWidth: bodyWidth,
+                    leftPadding: leftPadding,
+                    rightPadding: rightPadding,
+                    cardsPerPlayer: cardsPerPlayer
+                )
+                
+                return PlayerHandLayoutConstants(
+                    topPadding: computedPadding,
+                    bottomPadding: computedPadding,
+                    leftPadding: leftPadding,
+                    rightPadding: rightPadding
+                )
+            }
+        ]
+    ]
+    
+    static func current(
+        for deviceType: DeviceType,
+        orientation: AppOrientation,
+        bodyHeight: CGFloat,
+        bodyWidth: CGFloat
+    ) -> PlayerHandLayoutConstants {
+        if let closure = layoutCache[deviceType]?[orientation] {
+            return closure(bodyHeight, bodyWidth)
         }
-    }
-    
-    // Legacy method names for backward compatibility (if needed)
-    func playerHandTopValue(_ bodyHeight: CGFloat) -> CGFloat {
-        return topValue(bodyHeight)
-    }
-    
-    func playerHandBottomValue(_ bodyHeight: CGFloat) -> CGFloat {
-        return bottomValue(bodyHeight)
-    }
-    
-    func playerHandLeftValue(_ bodyWidth: CGFloat) -> CGFloat {
-        return leftValue(bodyWidth)
-    }
-    
-    func playerHandRightValue(_ bodyWidth: CGFloat) -> CGFloat {
-        return rightValue(bodyWidth)
+        // Fallback
+        return layoutCache[.iPhone]![.portrait]!(bodyHeight, bodyWidth)
     }
 }
 
-// MARK: - Global Layout Constants (PRESERVED ALL ORIGINAL VALUES)
+// MARK: - Global Layout Constants
 struct GlobalLayoutConstants {
     let deviceLength: CGFloat
     let deviceWidth: CGFloat
-    
     let headerHeight: CGFloat
     let headerWidth: CGFloat
     let bodyHeight: CGFloat
     let bodyWidth: CGFloat
-    
     let gameBoardTopPadding: CGFloat
     let gameBoardLeftPadding: CGFloat
     let gameBoardBottomPadding: CGFloat
@@ -219,7 +325,6 @@ struct GlobalLayoutConstants {
     let gameBoardAnchor: AnchorPosition
     let gridAnchor: AnchorPosition
     
-    // Computed properties for actual values
     func headerHeightValue(_ screenHeight: CGFloat) -> CGFloat {
         return headerHeight * screenHeight
     }
@@ -252,135 +357,62 @@ struct GlobalLayoutConstants {
         return gameBoardRightPadding * bodyWidth
     }
     
+    // OPTIMIZED: Pre-computed cache for O(1) lookup
+    private static let layoutCache: [DeviceType: [AppOrientation: GlobalLayoutConstants]] = [
+        .iPhone: [
+            .portrait: GlobalLayoutConstants(
+                deviceLength: 0, deviceWidth: 0,
+                headerHeight: 0.05, headerWidth: 1.0,
+                bodyHeight: 0.88, bodyWidth: 1.0,
+                gameBoardTopPadding: 0.125, gameBoardLeftPadding: 0.01,
+                gameBoardBottomPadding: 0.125, gameBoardRightPadding: 0.01,
+                gameBoardAnchor: .topLeft, gridAnchor: .topLeft
+            ),
+            .landscape: GlobalLayoutConstants(
+                deviceLength: 0, deviceWidth: 0,
+                headerHeight: 0.08, headerWidth: 1.0,
+                bodyHeight: 0.9, bodyWidth: 1.0,
+                gameBoardTopPadding: 0.01, gameBoardLeftPadding: 0.15,
+                gameBoardBottomPadding: 0.0, gameBoardRightPadding: 0.09,
+                gameBoardAnchor: .bottomLeft, gridAnchor: .bottomLeft
+            )
+        ],
+        .iPad: [
+            .portrait: GlobalLayoutConstants(
+                deviceLength: 0, deviceWidth: 0,
+                headerHeight: 0.05, headerWidth: 1.0,
+                bodyHeight: 0.95, bodyWidth: 1.0,
+                gameBoardTopPadding: 0.03, gameBoardLeftPadding: 0.12,
+                gameBoardBottomPadding: 0.03, gameBoardRightPadding: 0.12,
+                gameBoardAnchor: .topLeft, gridAnchor: .topLeft
+            ),
+            .landscape: GlobalLayoutConstants(
+                deviceLength: 0, deviceWidth: 0,
+                headerHeight: 0.05, headerWidth: 1.0,
+                bodyHeight: 0.92, bodyWidth: 1.0,
+                gameBoardTopPadding: 0.03, gameBoardLeftPadding: 0.085,
+                gameBoardBottomPadding: 0.03, gameBoardRightPadding: 0.085,
+                gameBoardAnchor: .bottomLeft, gridAnchor: .bottomLeft
+            )
+        ],
+        .mac: [
+            .landscape: GlobalLayoutConstants(
+                deviceLength: 0, deviceWidth: 0,
+                headerHeight: 0.08, headerWidth: 1.0,
+                bodyHeight: 0.92, bodyWidth: 1.0,
+                gameBoardTopPadding: 0.04, gameBoardLeftPadding: 0.1,
+                gameBoardBottomPadding: 0.04, gameBoardRightPadding: 0.1,
+                gameBoardAnchor: .bottomLeft, gridAnchor: .bottomLeft
+            )
+        ]
+    ]
+    
     static func current(for deviceType: DeviceType, orientation: AppOrientation) -> GlobalLayoutConstants {
-        switch (deviceType, orientation) {
-        case (.iPhone, .portrait):
-            return iOSPortraitConstants()
-        case (.iPhone, .landscape):
-            return iOSLandscapeConstants()
-        case (.iPad, .portrait):
-            return iPadOSPortraitConstants()
-        case (.iPad, .landscape):
-            return iPadOSLandscapeConstants()
-        case (.mac, .landscape):
-            return macOSLandscapeConstants()
-        case (.appleTV, .landscape):
-            return appleTVLandscapeConstants()
-        default:
-            return iOSPortraitConstants() // fallback
-        }
-    }
-    
-    // MARK: - iOS Portrait Constants (PRESERVED ORIGINAL VALUES)
-    private static func iOSPortraitConstants() -> GlobalLayoutConstants {
-        return GlobalLayoutConstants(
-            deviceLength: 0, // Will be set dynamically
-            deviceWidth: 0,  // Will be set dynamically
-            headerHeight: 0.05,          // 8% of device length
-            headerWidth: 1.0,            // 100% of device width
-            bodyHeight: 0.88,            // Calculated: device height minus header height
-            bodyWidth: 1.0,              // 100% of device width
-            gameBoardTopPadding: 0.12,  // 12.5% of body height
-            gameBoardLeftPadding: 0.01,  // 5% of body width
-            gameBoardBottomPadding: 0.125, // 12.5% of body height
-            gameBoardRightPadding: 0.01, // 5% of body width
-            gameBoardAnchor: .topLeft,
-            gridAnchor: .topLeft
-        )
-    }
-    
-    // MARK: - iOS Landscape Constants (PRESERVED ORIGINAL VALUES)
-    private static func iOSLandscapeConstants() -> GlobalLayoutConstants {
-        return GlobalLayoutConstants(
-            deviceLength: 0, // Will be set dynamically
-            deviceWidth: 0,  // Will be set dynamically
-            headerHeight: 0.08,          // 15% of device length
-            headerWidth: 1.0,            // 100% of device width
-            bodyHeight: 0.9,            // Calculated: device height minus header height
-            bodyWidth: 1.0,              // 100% of device width
-            gameBoardTopPadding: 0.01,   // 5% of body height
-            gameBoardLeftPadding: 0.17,   // 20% of body width
-            gameBoardBottomPadding: 0.0, // 0% of body height
-            gameBoardRightPadding: 0.17,  // 20% of body width
-            gameBoardAnchor: .bottomLeft,
-            gridAnchor: .bottomLeft
-        )
-    }
-    
-    // MARK: - iPadOS Portrait Constants (PRESERVED ORIGINAL VALUES)
-    private static func iPadOSPortraitConstants() -> GlobalLayoutConstants {
-        return GlobalLayoutConstants(
-            deviceLength: 0, // Will be set dynamically
-            deviceWidth: 0,  // Will be set dynamically
-            headerHeight: 0.05,          // 8% of device length
-            headerWidth: 1.0,            // 100% of device width
-            bodyHeight: 0.92,            // Calculated: device height minus header height
-            bodyWidth: 1.0,              // 100% of device width
-            gameBoardTopPadding: 0.1,   // 6% of body height (your adjustment)
-            gameBoardLeftPadding: 0.15,  // 15% of body width
-            gameBoardBottomPadding: 0.1, // 6% of body height (your adjustment)
-            gameBoardRightPadding: 0.15, // 15% of body width
-            gameBoardAnchor: .topLeft,
-            gridAnchor: .topLeft
-        )
-    }
-    
-    // MARK: - iPadOS Landscape Constants (PRESERVED ORIGINAL VALUES)
-    private static func iPadOSLandscapeConstants() -> GlobalLayoutConstants {
-        return GlobalLayoutConstants(
-            deviceLength: 0, // Will be set dynamically
-            deviceWidth: 0,  // Will be set dynamically
-            headerHeight: 0.05,          // 10% of device length
-            headerWidth: 1.0,            // 100% of device width
-            bodyHeight: 0.95,            // Calculated: device height minus header height
-            bodyWidth: 1.0,              // 100% of device width
-            gameBoardTopPadding: 0.05,   // 10% of body height
-            gameBoardLeftPadding: 0.088,  // 20% of body width
-            gameBoardBottomPadding: 0.05, // 10% of body height
-            gameBoardRightPadding: 0.088, // 20% of body width
-            gameBoardAnchor: .bottomLeft,
-            gridAnchor: .bottomLeft
-        )
-    }
-    
-    // MARK: - macOS Landscape Constants (PRESERVED ORIGINAL VALUES)
-    private static func macOSLandscapeConstants() -> GlobalLayoutConstants {
-        return GlobalLayoutConstants(
-            deviceLength: 0, // Will be set dynamically
-            deviceWidth: 0,  // Will be set dynamically
-            headerHeight: 0.08,          // 8% of device length
-            headerWidth: 1.0,            // 100% of device width
-            bodyHeight: 0.92,            // Calculated: device height minus header height
-            bodyWidth: 1.0,              // 100% of device width
-            gameBoardTopPadding: 0.03,   // 3% of body height
-            gameBoardLeftPadding: 0.5,   // 50% of body width
-            gameBoardBottomPadding: 0.03, // 3% of body height
-            gameBoardRightPadding: 0.5,  // 50% of body width
-            gameBoardAnchor: .bottomLeft,
-            gridAnchor: .bottomLeft
-        )
-    }
-    
-    // MARK: - Apple TV Landscape Constants (PRESERVED ORIGINAL VALUES)
-    private static func appleTVLandscapeConstants() -> GlobalLayoutConstants {
-        return GlobalLayoutConstants(
-            deviceLength: 0, // Will be set dynamically
-            deviceWidth: 0,  // Will be set dynamically
-            headerHeight: 0.01,          // 1% of device length
-            headerWidth: 1.0,            // 100% of device width
-            bodyHeight: 0.85,            // Calculated: device height minus header height
-            bodyWidth: 1.0,              // 100% of device width
-            gameBoardTopPadding: 0.09,   // 9% of body height
-            gameBoardLeftPadding: 0.14,  // 14% of body width
-            gameBoardBottomPadding: 0.01, // 1% of body height
-            gameBoardRightPadding: 0.14, // 14% of body width
-            gameBoardAnchor: .bottomLeft,
-            gridAnchor: .bottomLeft
-        )
+        layoutCache[deviceType]?[orientation] ?? layoutCache[.iPhone]![.portrait]!
     }
 }
 
-// MARK: - Glass Effect View Modifier (UNCHANGED)
+// MARK: - Glass Effect View Modifier
 struct GlassEffect: ViewModifier {
     func body(content: Content) -> some View {
         content
@@ -401,7 +433,7 @@ extension View {
     }
 }
 
-// MARK: - Color Extension for Hex Colors (UNCHANGED)
+// MARK: - Color Extension for Hex Colors
 extension Color {
     init(hex: String) {
         let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
@@ -428,20 +460,3 @@ extension Color {
         )
     }
 }
-
-// MARK: - IMPORTANT NOTE
-/*
- The DiscardOverlayLayoutConstants struct has been REMOVED from this file.
- 
- All discard overlay positioning and grid configuration is now handled by the
- unified DiscardOverlayConfiguration system in DiscardOverlayConfiguration.swift.
- 
- This change:
- - Consolidates all discard overlay logic in one place
- - Provides better control over grid sections and element positioning
- - Adds support for rotation and content types
- - Improves maintainability and reduces code duplication
- 
- If you need to adjust discard overlay positioning or grid layout,
- modify the configurations in DiscardOverlayConfiguration.swift instead.
- */

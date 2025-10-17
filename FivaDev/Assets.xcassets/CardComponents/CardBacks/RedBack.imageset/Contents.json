@@ -1,0 +1,12 @@
+{
+  "images" : [
+    {
+      "filename" : "RedBack.svg",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}

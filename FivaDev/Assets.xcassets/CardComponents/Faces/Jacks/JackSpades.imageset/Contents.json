@@ -1,0 +1,12 @@
+{
+  "images" : [
+    {
+      "filename" : "JackSpades.svg",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}
