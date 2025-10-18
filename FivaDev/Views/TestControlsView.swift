@@ -324,6 +324,123 @@ struct TestControlsView: View {
             return "Suit Zones"
         }
     }
+    
+    // MARK: - AI Controls
+    
+    private var aiControlsSection: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("🤖 AI Opponent")
+                .foregroundColor(.white)
+                .font(.caption)
+                .fontWeight(.semibold)
+            
+            // Quick Setup Buttons
+            HStack(spacing: 4) {
+                Button("vs Easy") {
+                    gameStateManager.setupHumanVsAI(aiDifficulty: .easy)
+                }
+                .foregroundColor(.white)
+                .font(.caption2)
+                .padding(.horizontal, 6)
+                .padding(.vertical, 3)
+                .background(Color.green.opacity(0.5))
+                .cornerRadius(3)
+                
+                Button("vs Medium") {
+                    gameStateManager.setupHumanVsAI(aiDifficulty: .medium)
+                }
+                .foregroundColor(.white)
+                .font(.caption2)
+                .padding(.horizontal, 6)
+                .padding(.vertical, 3)
+                .background(Color.blue.opacity(0.6))
+                .cornerRadius(3)
+                
+                Button("vs Hard") {
+                    gameStateManager.setupHumanVsAI(aiDifficulty: .hard)
+                }
+                .foregroundColor(.white)
+                .font(.caption2)
+                .padding(.horizontal, 6)
+                .padding(.vertical, 3)
+                .background(Color.red.opacity(0.6))
+                .cornerRadius(3)
+            }
+            
+            // AI vs AI and Clear
+            HStack(spacing: 4) {
+                Button("AI vs AI") {
+                    gameStateManager.setupAIvsAI(
+                        ai1Difficulty: .medium,
+                        ai2Difficulty: .medium
+                    )
+                }
+                .foregroundColor(.white)
+                .font(.caption2)
+                .padding(.horizontal, 6)
+                .padding(.vertical, 3)
+                .background(Color.purple.opacity(0.6))
+                .cornerRadius(3)
+                
+                Button("Clear AI") {
+                    gameStateManager.clearAllAI()
+                }
+                .foregroundColor(.white)
+                .font(.caption2)
+                .padding(.horizontal, 6)
+                .padding(.vertical, 3)
+                .background(Color.gray.opacity(0.6))
+                .cornerRadius(3)
+            }
+            
+            // Current AI Status
+            if !gameStateManager.aiPlayers.isEmpty {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Active AI:")
+                        .foregroundColor(.white.opacity(0.8))
+                        .font(.caption2)
+                    
+                    ForEach(Array(gameStateManager.aiPlayers.keys.sorted()), id: \.self) { playerIndex in
+                        if let ai = gameStateManager.aiPlayers[playerIndex] {
+                            HStack(spacing: 4) {
+                                Text("P\(playerIndex + 1):")
+                                    .foregroundColor(.white.opacity(0.7))
+                                    .font(.caption2)
+                                Text(ai.displayName)
+                                    .foregroundColor(.white)
+                                    .font(.caption2)
+                                    .fontWeight(.semibold)
+                            }
+                        }
+                    }
+                }
+                .padding(.top, 2)
+            }
+            
+            // Current Turn Indicator
+            HStack(spacing: 4) {
+                if gameStateManager.isCurrentPlayerAI {
+                    Circle()
+                        .fill(Color.purple)
+                        .frame(width: 6, height: 6)
+                    Text("AI Thinking...")
+                        .foregroundColor(.purple)
+                        .font(.caption2)
+                } else {
+                    Circle()
+                        .fill(Color.green)
+                        .frame(width: 6, height: 6)
+                    Text("Your Turn")
+                        .foregroundColor(.green)
+                        .font(.caption2)
+                }
+            }
+            .padding(.top, 2)
+        }
+        .padding(6)
+        .background(Color.black.opacity(0.3))
+        .cornerRadius(4)
+    }
 }
 
 // To use this, add it to your HeaderView or ContentView temporarily:

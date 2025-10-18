@@ -35,10 +35,10 @@ struct ContentView: View {
                     .environmentObject(gameStateManager)
                 
                 // Development Controls (hidden in production builds)
-                #if DEBUG
-                TestControlsView()
-                    .environmentObject(gameStateManager)
-                #endif
+//                #if DEBUG
+//                TestControlsView()
+//                    .environmentObject(gameStateManager)
+//                #endif
                 
                 // Body Section
                 BodyView(
@@ -50,6 +50,10 @@ struct ContentView: View {
                 .frame(width: bodyWidth, height: bodyHeight)
                 .environmentObject(gameStateManager)
             }
+        }
+        .onAppear {
+            // Auto-start AI game when app launches
+            gameStateManager.setupHumanVsAI(aiDifficulty: .medium)
         }
         // Force view to update on size changes using geometry dimensions instead of UIScreen.main
         .id("view-refresh")

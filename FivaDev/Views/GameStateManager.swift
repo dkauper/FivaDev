@@ -46,11 +46,13 @@ struct DeadCardNotification: Equatable {
 
 @MainActor
 class GameStateManager: ObservableObject {
+
+
     // MARK: - Game Configuration
     
     /// Game configuration (will be set by pre-game dialog in future)
 //    @Published var gameState: GameState = .threePlayer {
-        @Published var gameState: GameState = GameState(numPlayers: 3, numTeams: 3) {
+        @Published var gameState: GameState = GameState(numPlayers: 2, numTeams: 2) {
         didSet {
             // Sync player names when game state changes
             updatePlayerNames()
@@ -138,6 +140,21 @@ class GameStateManager: ObservableObject {
     
     // Track the current highlighting state to prevent rapid state changes
     private var highlightingTimeouts: [String: Task<Void, Never>] = [:]
+    
+    // MARK: - AI Support
+    
+    /// AI opponents for each player slot (nil = human player)
+    @Published var aiPlayers: [Int: AIPlayer] = [:]
+    
+    /// Checks if current player is AI-controlled
+    var isCurrentPlayerAI: Bool {
+        return aiPlayers[gameState.currentPlayer] != nil
+    }
+    
+    /// Gets AI for current player (if exists)
+    var currentAI: AIPlayer? {
+        return aiPlayers[gameState.currentPlayer]
+    }
     
     // MARK: - Initialization
     
@@ -671,6 +688,11 @@ class GameStateManager: ObservableObject {
         
         gameState.advanceToNextPlayer()
         
+        // Auto-start AI turn if next player is AI
+                if isCurrentPlayerAI {
+                    startAITurnLoop()
+                }
+        
         // Verify hand was preserved
         let restoredHand = currentPlayerCards
         
@@ -1118,4 +1140,157 @@ class GameStateManager: ObservableObject {
     }
     
     #endif
+    
+    // MARK: - AI Configuration
+    
+    /// Assigns an AI opponent to a player slot
+    /// - Parameters:
+    ///   - playerIndex: Player slot (0-11)
+    ///   - difficulty: AI difficulty level
+    func assignAI(to playerIndex: Int, difficulty: AIDifficulty) {
+        guard playerIndex >= 0 && playerIndex < gameState.numPlayers else {
+            print("⚠️ GameStateManager: Invalid player index \(playerIndex)")
+            return
+        }
+        
+        let playerColor = gameState.colorFor(player: playerIndex)
+        aiPlayers[playerIndex] = AIPlayer(difficulty: difficulty, playerColor: playerColor)
+        
+        print("🤖 GameStateManager: Assigned \(difficulty.rawValue) AI to Player \(playerIndex + 1) (\(playerColor.rawValue))")
+    }
+    
+    /// Removes AI from a player slot (makes them human)
+    /// - Parameter playerIndex: Player slot (0-11)
+    func removeAI(from playerIndex: Int) {
+        if aiPlayers.removeValue(forKey: playerIndex) != nil {
+            print("👤 GameStateManager: Player \(playerIndex + 1) is now human-controlled")
+        }
+    }
+    
+    /// Clears all AI players
+    func clearAllAI() {
+        aiPlayers.removeAll()
+        print("👤 GameStateManager: All AI players removed")
+    }
+    
+    // MARK: - AI Turn Execution
+    
+    /// Executes AI turn if current player is AI-controlled
+    /// Returns true if an AI move was executed
+    @discardableResult
+    func executeAITurnIfNeeded() async -> Bool {
+        guard let ai = currentAI else { return false }
+        
+        print("🤖 GameStateManager: AI turn for Player \(gameState.currentPlayer + 1)")
+        
+        // Get AI's move choice
+        guard let move = await ai.chooseMove(hand: currentPlayerCards, gameState: self) else {
+            print("⚠️ GameStateManager: AI has no valid moves")
+            return false
+        }
+        
+        // Execute the move on main thread
+        await MainActor.run {
+            if move.position == -1 {
+                // Special case: Dead card discard
+                discardDeadCard(move.cardName)
+            } else {
+                // Normal play
+                playCardOnBoard(move.cardName, position: move.position)
+            }
+        }
+        
+        return true
+    }
+    
+    /// Starts AI turn processing loop
+    /// Continues executing AI turns until a human player's turn
+    func startAITurnLoop() {
+        Task {
+            // Small delay before first AI turn
+            try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
+            
+            while isCurrentPlayerAI {
+                let executed = await executeAITurnIfNeeded()
+                
+                if !executed {
+                    break // No valid moves, stop loop
+                }
+                
+                // Small delay between consecutive AI turns
+                try? await Task.sleep(nanoseconds: 300_000_000) // 0.3 seconds
+            }
+            
+            if !isCurrentPlayerAI {
+                print("👤 GameStateManager: Human player's turn (Player \(gameState.currentPlayer + 1))")
+            }
+        }
+    }
+    
+    // MARK: - Quick Setup Methods
+    
+    /// Quick setup: Human vs AI game
+    /// - Parameter aiDifficulty: AI difficulty level
+    func setupHumanVsAI(aiDifficulty: AIDifficulty = .medium) {
+        // 2 player game
+        gameState = GameState(numPlayers: 2, numTeams: 2)
+        
+        // Player 1 (index 0) = Human
+        // Player 2 (index 1) = AI
+        assignAI(to: 1, difficulty: aiDifficulty)
+        
+        startNewGame()
+        
+        print("🎮 GameStateManager: Human vs AI (\(aiDifficulty.rawValue)) game started")
+    }
+    
+    /// Quick setup: AI vs AI game (for testing)
+    /// - Parameters:
+    ///   - ai1Difficulty: First AI difficulty
+    ///   - ai2Difficulty: Second AI difficulty
+    func setupAIvsAI(ai1Difficulty: AIDifficulty = .medium, ai2Difficulty: AIDifficulty = .medium) {
+        // 2 player game
+        gameState = GameState(numPlayers: 2, numTeams: 2)
+        
+        // Both players are AI
+        assignAI(to: 0, difficulty: ai1Difficulty)
+        assignAI(to: 1, difficulty: ai2Difficulty)
+        
+        startNewGame()
+        
+        // Start AI turn loop since player 1 is AI
+        startAITurnLoop()
+        
+        print("🎮 GameStateManager: AI vs AI game started (\(ai1Difficulty.rawValue) vs \(ai2Difficulty.rawValue))")
+    }
+    
+    /// Quick setup: Multi-player with mixed human/AI
+    /// - Parameters:
+    ///   - numPlayers: Total players (2-12)
+    ///   - numTeams: Number of teams (2-3)
+    ///   - aiSlots: Player indices that should be AI (e.g., [1, 3] = players 2 and 4)
+    ///   - aiDifficulty: Difficulty for all AI players
+    func setupMixedGame(
+        numPlayers: Int,
+        numTeams: Int,
+        aiSlots: [Int],
+        aiDifficulty: AIDifficulty = .medium
+    ) {
+        gameState = GameState(numPlayers: numPlayers, numTeams: numTeams)
+        
+        // Assign AI to specified slots
+        for slot in aiSlots where slot < numPlayers {
+            assignAI(to: slot, difficulty: aiDifficulty)
+        }
+        
+        startNewGame()
+        
+        // Start AI loop if first player is AI
+        if isCurrentPlayerAI {
+            startAITurnLoop()
+        }
+        
+        let humanCount = numPlayers - aiSlots.count
+        print("🎮 GameStateManager: Mixed game started - \(humanCount) humans vs \(aiSlots.count) AI")
+    }
 }
